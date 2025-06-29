@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FontAwesome } from '@expo/vector-icons';
-import iconSet from '@expo/vector-icons/build/Fontisto';
 
 const { width, height } = Dimensions.get('window');
 
@@ -77,7 +76,6 @@ const OnboardingScreen = ({ navigation }) => {
       >
         {slides.map((slide, index) => (
           <View key={index} style={styles.slide}>
-  
             <View style={[styles.iconContainer, { backgroundColor: slide.color }]}>
               {slide.iconSet === 'FontAwesome' ? (
                 <FontAwesome name={slide.icon} size={80} color="white" />
@@ -85,7 +83,6 @@ const OnboardingScreen = ({ navigation }) => {
                 <Ionicons name={slide.icon} size={80} color="white" />
               )}
             </View>
-            
             <Text style={styles.title}>{slide.title}</Text>
             <Text style={styles.subtitle}>{slide.subtitle}</Text>
             <Text style={styles.description}>{slide.description}</Text>
