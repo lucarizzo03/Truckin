@@ -52,8 +52,8 @@ const AuthScreen = ({ navigation }) => {
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
-          <Ionicons name="truck" size={60} color="#007AFF" />
-          <Text style={styles.title}>TruckFlow</Text>
+          <Ionicons name="person" size={60} color="#007AFF" />
+          <Text style={styles.title}>AutoPilot</Text>
           <Text style={styles.subtitle}>
             {isLogin ? 'Welcome back!' : 'Create your account'}
           </Text>

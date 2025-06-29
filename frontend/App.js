@@ -63,9 +63,23 @@ export default function App() {
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           {!hasCompletedOnboarding ? (
-            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+            <Stack.Screen name="Onboarding">
+              {props => (
+                <OnboardingScreen
+                  {...props}
+                  onComplete={() => setHasCompletedOnboarding(true)}
+                />
+              )}
+            </Stack.Screen>
           ) : !isAuthenticated ? (
-            <Stack.Screen name="Auth" component={AuthScreen} />
+            <Stack.Screen name="Auth">
+              {props => (
+                <AuthScreen
+                  {...props}
+                  onLogin={() => setIsAuthenticated(true)}
+                />
+              )}
+            </Stack.Screen>
           ) : (
             <Stack.Screen name="Main" component={TabNavigator} />
           )}
