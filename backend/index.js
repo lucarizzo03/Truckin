@@ -13,5 +13,10 @@ app.use('/register', async (req, res) => {
 
 
 
+
 })
+
+
+const PORT = process.env.PORT || 2300;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 

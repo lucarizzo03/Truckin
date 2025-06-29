@@ -19,6 +19,8 @@ const AuthScreen = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState(''); 
 
   const handleAuth = () => {
     if (!email || !password) {
@@ -58,7 +60,6 @@ const AuthScreen = ({ navigation }) => {
             {isLogin ? 'Welcome back!' : 'Create your account'}
           </Text>
         </View>
-
         <View style={styles.form}>
           <View style={styles.inputContainer}>
             <Ionicons name="mail" size={20} color="#666" style={styles.inputIcon} />
@@ -71,7 +72,6 @@ const AuthScreen = ({ navigation }) => {
               autoCapitalize="none"
             />
           </View>
-
           <View style={styles.inputContainer}>
             <Ionicons name="lock-closed" size={20} color="#666" style={styles.inputIcon} />
             <TextInput
@@ -94,16 +94,38 @@ const AuthScreen = ({ navigation }) => {
           </View>
 
           {!isLogin && (
+            <>
             <View style={styles.inputContainer}>
               <Ionicons name="call" size={20} color="#666" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Phone (optional)"
+                placeholder="Phone Number"
                 value={phone}
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
               />
             </View>
+            <View style={styles.inputContainer}>
+              <Ionicons name="person" size={20} color="#666" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="First"
+                value={firstName}
+                onChangeText={setFirstName}
+                keyboardType="default"
+              />
+            </View>
+            <View style={styles.inputContainer}>
+              <Ionicons name="person" size={20} color="#666" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Last"
+                value={lastName}
+                onChangeText={setLastName}
+                keyboardType="default"
+              />
+            </View>
+            </>
           )}
 
           <TouchableOpacity style={styles.authButton} onPress={handleAuth}>
@@ -164,7 +186,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 15,
   },
   title: {
     fontSize: 32,
