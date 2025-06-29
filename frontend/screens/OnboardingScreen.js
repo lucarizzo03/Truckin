@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,18 +8,22 @@ import {
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { FontAwesome } from '@expo/vector-icons';
+import iconSet from '@expo/vector-icons/build/Fontisto';
 
 const { width, height } = Dimensions.get('window');
 
 const OnboardingScreen = ({ navigation }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const scrollViewRef = useRef(null);
 
   const slides = [
     {
-      title: 'Welcome to TruckFlow',
+      title: 'Welcome to AutoPilot',
       subtitle: 'Your Smart Trucking Companion',
       description: 'Find loads, plan routes, and manage your business all in one place.',
       icon: 'truck',
+      iconSet: 'FontAwesome',
       color: '#007AFF',
     },
     {
@@ -47,9 +51,10 @@ const OnboardingScreen = ({ navigation }) => {
 
   const nextSlide = () => {
     if (currentSlide < slides.length - 1) {
-      setCurrentSlide(currentSlide + 1);
+      const newIndex = currentSlide + 1;
+      setCurrentSlide(newIndex);
+      scrollViewRef.current?.scrollTo({ x: newIndex * width, animated: true });
     } else {
-      // Complete onboarding
       navigation.replace('Auth');
     }
   };
@@ -61,6 +66,7 @@ const OnboardingScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <ScrollView
+        ref={scrollViewRef}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -71,8 +77,13 @@ const OnboardingScreen = ({ navigation }) => {
       >
         {slides.map((slide, index) => (
           <View key={index} style={styles.slide}>
+  
             <View style={[styles.iconContainer, { backgroundColor: slide.color }]}>
-              <Ionicons name={slide.icon} size={80} color="white" />
+              {slide.iconSet === 'FontAwesome' ? (
+                <FontAwesome name={slide.icon} size={80} color="white" />
+              ) : (
+                <Ionicons name={slide.icon} size={80} color="white" />
+              )}
             </View>
             
             <Text style={styles.title}>{slide.title}</Text>
