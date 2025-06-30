@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-// test 
+import { Ionicons } from '@expo/vector-icons';
+
+
 import {
   View,
   Text,
@@ -11,9 +13,9 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
-const AuthScreen = ({ navigation }) => {
+
+const AuthScreen = async () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,23 +24,39 @@ const AuthScreen = ({ navigation }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState(''); 
 
-  const handleAuth = () => {
+  const handleAuth = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
-    // Mock authentication - in real app, this would call your auth service
-    if (isLogin) {
-      // Login logic
-      console.log('Logging in with:', email, password);
-    } else {
-      // Sign up logic
-      console.log('Signing up with:', email, password, phone);
-    }
+    const url = isLogin ? 'http://localhost:2300/api/login' : 'http://localhost:2300/api/signup';
 
-    // Navigate to main app
-    navigation.replace('Main');
+    const payload = isLogin
+    ? { email, password }
+    : { email, password, firstName, lastName, phone };
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await response.json();
+
+      if (!response.ok) {
+        Alert.alert('Error', json.error || 'Authentication failed');
+        return;
+      }
+
+      console.log(json.message);
+      navigation.replace('Main');
+    } 
+    catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'Network or server error');
+    }
   };
 
   const handleSocialAuth = (provider) => {
