@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 
 
-const AuthScreen = async () => {
+const AuthScreen = ({ navigation }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
