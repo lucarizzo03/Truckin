@@ -1,10 +1,10 @@
 # AutoPilot
 
-# Backend:
-# cd backend 
-# node index
+Backend:
+- cd backend 
+- node index
 
 # Frontend
-# cd frontend
-# npx expo start
+- cd frontend
+- npx expo start
 
