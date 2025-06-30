@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 
 
-const AuthScreen = ({ navigation }) => {
+const AuthScreen = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -51,7 +51,7 @@ const AuthScreen = ({ navigation }) => {
       }
 
       console.log(json.message);
-      navigation.replace('Main');
+      onLogin()
     } 
     catch (err) {
       console.error(err);
@@ -59,11 +59,15 @@ const AuthScreen = ({ navigation }) => {
     }
   };
 
+
+  // for APPLE AND GOOGLE AUTH
   const handleSocialAuth = (provider) => {
     console.log(`Signing in with ${provider}`);
     // Mock social auth
-    navigation.replace('Main');
+    onLogin()
   };
+
+
 
   return (
     <KeyboardAvoidingView 
@@ -78,6 +82,8 @@ const AuthScreen = ({ navigation }) => {
             {isLogin ? 'Welcome back!' : 'Create your account'}
           </Text>
         </View>
+        
+        {/* Email input */}
         <View style={styles.form}>
           <View style={styles.inputContainer}>
             <Ionicons name="mail" size={20} color="#666" style={styles.inputIcon} />
@@ -90,6 +96,8 @@ const AuthScreen = ({ navigation }) => {
               autoCapitalize="none"
             />
           </View>
+          
+          {/* Password input */}
           <View style={styles.inputContainer}>
             <Ionicons name="lock-closed" size={20} color="#666" style={styles.inputIcon} />
             <TextInput
@@ -111,6 +119,7 @@ const AuthScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
+          {/* Additional fields for Sign Up only */}
           {!isLogin && (
             <>
             <View style={styles.inputContainer}>
@@ -146,18 +155,21 @@ const AuthScreen = ({ navigation }) => {
             </>
           )}
 
+          {/* Submit button */}
           <TouchableOpacity style={styles.authButton} onPress={handleAuth}>
             <Text style={styles.authButtonText}>
               {isLogin ? 'Log In' : 'Sign Up'}
             </Text>
           </TouchableOpacity>
 
+          {/* Divider */}
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>or</Text>
             <View style={styles.dividerLine} />
           </View>
 
+          {/* Social buttons */}
           <View style={styles.socialButtons}>
             <TouchableOpacity 
               style={[styles.socialButton, styles.googleButton]}
@@ -177,6 +189,7 @@ const AuthScreen = ({ navigation }) => {
           </View>
         </View>
 
+        {/* Toggle between Login and Sign Up */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
             {isLogin ? "Don't have an account? " : "Already have an account? "}

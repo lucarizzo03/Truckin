@@ -12,7 +12,7 @@ import { FontAwesome } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get('window');
 
-const OnboardingScreen = ({ navigation, onComplete }) => {
+const OnboardingScreen = ({ onComplete }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const scrollViewRef = useRef(null);
 
