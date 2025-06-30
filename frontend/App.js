@@ -18,7 +18,7 @@ import OnboardingScreen from './screens/OnboardingScreen';
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-function TabNavigator() {
+function TabNavigator({ currentLoad, setCurrentLoad }) {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -44,8 +44,21 @@ function TabNavigator() {
         headerShown: false,
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Loads" component={LoadsScreen} />
+
+      <Tab.Screen name="Home"
+        children={props => (
+          <HomeScreen {...props} currentLoad={currentLoad} />
+        )}
+      />
+
+
+      <Tab.Screen name="Loads"
+        children={props => (
+          <LoadsScreen {...props} setCurrentLoad={setCurrentLoad} />
+        )}
+      />
+
+
       <Tab.Screen name="Route" component={RouteScreen} />
       <Tab.Screen name="Finance" component={FinanceScreen} />
       <Tab.Screen name="Chat" component={ChatScreen} />
@@ -56,6 +69,7 @@ function TabNavigator() {
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = React.useState(false);
+  const [currentLoad, setCurrentLoad] = React.useState(null)
 
   return (
     <View style={styles.container}>
@@ -81,7 +95,24 @@ export default function App() {
               )}
             </Stack.Screen>
           ) : (
-            <Stack.Screen name="Main" component={TabNavigator} />
+            <Stack.Screen name="Main"  
+              children={props => (
+                <TabNavigator
+                  {...props}
+                  currentLoad={currentLoad}
+                  setCurrentLoad={setCurrentLoad}
+                />
+              )}
+
+
+
+
+
+
+
+
+
+            />
           )}
         </Stack.Navigator>
       </NavigationContainer>

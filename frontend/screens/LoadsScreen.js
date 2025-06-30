@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const LoadsScreen = ({ navigation }) => {
+const LoadsScreen = ({ navigation, setCurrentLoad }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [loads, setLoads] = useState([
@@ -100,7 +100,8 @@ const LoadsScreen = ({ navigation }) => {
   const handleAcceptLoad = (load) => {
     Alert.alert('Load Accepted', `You've accepted load ${load.id}`);
     // Remove from available loads
-    setLoads(loads.filter(l => l.id !== load.id));
+    setCurrentLoad(load)
+    setLoads(prevLoads => prevLoads.filter(l => l.id !== load.id)); // Remove from available loads
   };
 
   const renderLoadItem = ({ item }) => (

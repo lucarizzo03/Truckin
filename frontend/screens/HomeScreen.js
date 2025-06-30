@@ -9,15 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const HomeScreen = ({ navigation }) => {
-  const [currentLoad, setCurrentLoad] = useState({
-    id: 'L001',
-    pickup: 'Chicago, IL',
-    delivery: 'Dallas, TX',
-    pay: 2800,
-    eta: '2:30 PM',
-    distance: '925 miles',
-  });
+const HomeScreen = ({ navigation, currentLoad }) => {
 
   const [financials, setFinancials] = useState({
     today: 450,
@@ -70,55 +62,57 @@ const HomeScreen = ({ navigation }) => {
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>Current Load</Text>
             <View style={styles.statusBadge}>
-              <Text style={styles.statusText}>Active</Text>
+              <Text style={styles.statusText}>
+                {currentLoad ? 'Active' : 'None'}
+              </Text>
             </View>
           </View>
-          
-          <View style={styles.loadInfo}>
-            <View style={styles.routeInfo}>
-              <View style={styles.locationRow}>
-                <Ionicons name="location" size={16} color="#007AFF" />
-                <Text style={styles.locationText}>{currentLoad.pickup}</Text>
-              </View>
-              <View style={styles.routeLine} />
-              <View style={styles.locationRow}>
-                <Ionicons name="location" size={16} color="#FF3B30" />
-                <Text style={styles.locationText}>{currentLoad.delivery}</Text>
-              </View>
-            </View>
-            
-            <View style={styles.loadDetails}>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Pay:</Text>
-                <Text style={styles.detailValue}>${currentLoad.pay.toLocaleString()}</Text>
-              </View>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>ETA:</Text>
-                <Text style={styles.detailValue}>{currentLoad.eta}</Text>
-              </View>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Distance:</Text>
-                <Text style={styles.detailValue}>{currentLoad.distance}</Text>
-              </View>
-            </View>
-          </View>
-          
-          <View style={styles.loadActions}>
-            <TouchableOpacity 
-              style={[styles.actionButton, styles.acceptButton]}
-              onPress={() => handleLoadAction('accept')}
-            >
-              <Text style={styles.actionButtonText}>Accept</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.actionButton, styles.declineButton]}
-              onPress={() => handleLoadAction('decline')}
-            >
-              <Text style={[styles.actionButtonText, { color: '#FF3B30' }]}>Decline</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
 
+          {currentLoad ? (
+            <>
+              <View style={styles.loadInfo}>
+                <View style={styles.routeInfo}>
+                  <View style={styles.locationRow}>
+                    <Ionicons name="location" size={16} color="#007AFF" />
+                    <Text style={styles.locationText}>{currentLoad.pickup || 'N/A'}</Text>
+                  </View>
+                  <View style={styles.routeLine} />
+                  <View style={styles.locationRow}>
+                    <Ionicons name="location" size={16} color="#FF3B30" />
+                    <Text style={styles.locationText}>{currentLoad.delivery || 'N/A'}</Text>
+                  </View>
+                </View>
+                <View style={styles.loadDetails}>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Pay:</Text>
+                    <Text style={styles.detailValue}>
+                      {typeof currentLoad.pay === 'number'
+                        ? `$${currentLoad.pay.toLocaleString()}`
+                        : 'N/A'}
+                    </Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>ETA:</Text>
+                    <Text style={styles.detailValue}>
+                      {currentLoad.eta || currentLoad.pickupTime || 'N/A'}
+                    </Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Distance:</Text>
+                    <Text style={styles.detailValue}>
+                      {currentLoad.distance || 'N/A'}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </>
+          ) : (
+            <Text style={{ color: '#666', marginBottom: 16 }}>
+              No load assigned. Accept a load to get started!
+            </Text>
+          )}
+        </View>
+                
         {/* Financial Summary */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Financial Summary</Text>
