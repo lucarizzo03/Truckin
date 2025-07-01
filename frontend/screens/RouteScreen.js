@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,44 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import MapView, { Marker } from 'react-native-maps';
+import Constants from 'expo-constants';
+import BottomSheet from '@gorhom/bottom-sheet';
+import { BottomSheetHandle } from '@gorhom/bottom-sheet';
+
+const GOOGLE_API_KEY = Constants.expoConfig.extra.GOOGLE_API_KEY;
+
 
 const RouteScreen = ({ navigation, currentLoad }) => {
+  const [pickupCoords, setPickupCoords] = useState(null);
+  const [deliveryCoords, setDeliveryCoords] = useState(null);
+
+  const bottomSheetRef = useRef(null);
+  const snapPoints = useMemo(() => ['15%', '40%', '80%'], []);
+
+
+  useEffect(() => {
+    const geocodeAddress = async (address, setter) => {
+      if (!address) return;
+      try {
+        const response = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_API_KEY}`
+        );
+        const data = await response.json();
+        if (data.results && data.results[0]) {
+          const { lat, lng } = data.results[0].geometry.location;
+          setter({ latitude: lat, longitude: lng });
+        }
+      } catch (e) {
+        setter(null);
+      }
+    };
+
+    if (currentLoad) {
+      geocodeAddress(currentLoad.pickup, setPickupCoords);
+      geocodeAddress(currentLoad.delivery, setDeliveryCoords);
+    }
+  }, [currentLoad]);
   
   const [routeStops, setRouteStops] = useState([
     {
@@ -127,7 +163,27 @@ const RouteScreen = ({ navigation, currentLoad }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* Map absolutely fills the screen */}
+      <View style={styles.mapContainer} pointerEvents="box-none">
+        <MapView
+          style={{ flex: 1 }}
+          initialRegion={{
+            latitude: pickupCoords?.latitude || 41.8781,
+            longitude: pickupCoords?.longitude || -87.6298,
+            latitudeDelta: 5,
+            longitudeDelta: 5,
+          }}
+        >
+          {pickupCoords && (
+            <Marker coordinate={pickupCoords} title="Pickup" description={currentLoad.pickup} />
+          )}
+          {deliveryCoords && (
+            <Marker coordinate={deliveryCoords} title="Delivery" description={currentLoad.delivery} />
+          )}
+        </MapView>
+      </View>
+
+      {/* Header overlays the map */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Route Navigation</Text>
         <TouchableOpacity style={styles.voiceButton} onPress={handleVoiceCommand}>
@@ -135,116 +191,113 @@ const RouteScreen = ({ navigation, currentLoad }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Map Placeholder */}
-      <View style={styles.mapContainer}>
-        <View style={styles.mapPlaceholder}>
-          <Ionicons name="map" size={60} color="#ddd" />
-          <Text style={styles.mapPlaceholderText}>Map View</Text>
-          <Text style={styles.mapPlaceholderSubtext}>Interactive map with route overlay</Text>
-        </View>
-        
-        {/* Route Summary Overlay */}
-        <View style={styles.routeSummary}>
-          <View style={styles.routeHeader}>
-            <Text style={styles.routeTitle}>Current Route</Text>
-            <TouchableOpacity onPress={handleRouteOptimization}>
-              <Ionicons name="refresh" size={20} color="#007AFF" />
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.routeDetails}>
-            <View style={styles.routeInfo}>
-              <View style={styles.locationRow}>
-                <Ionicons name="location" size={16} color="#007AFF" />
-                <Text style={styles.locationText}>{currentLoad.pickup}</Text>
-              </View>
-              <View style={styles.routeLine} />
-              <View style={styles.locationRow}>
-                <Ionicons name="location" size={16} color="#FF3B30" />
-                <Text style={styles.locationText}>{currentLoad.delivery}</Text>
-              </View>
+      {/* Bottom Sheet overlays the map */}
+      <BottomSheet
+        ref={bottomSheetRef}
+        index={1}
+        snapPoints={snapPoints}
+        enablePanDownToClose={false}
+        enableContentPanningGesture={true}
+        handleComponent={BottomSheetHandle}
+      >
+        <View style={{ padding: 16 }}>
+          {/* Route Summary */}
+          <View style={styles.routeSummary}>
+            <View style={styles.routeHeader}>
+              <Text style={styles.routeTitle}>Current Route</Text>
+              <TouchableOpacity onPress={handleRouteOptimization}>
+                <Ionicons name="refresh" size={20} color="#007AFF" />
+              </TouchableOpacity>
             </View>
-            
-            <View style={styles.routeStats}>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>ETA</Text>
-                <Text style={styles.statValue}>{currentLoad.eta}</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Distance</Text>
-                <Text style={styles.statValue}>{currentLoad.distance}</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Duration</Text>
-                <Text style={styles.statValue}>{currentLoad.duration}</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-      </View>
-
-      {/* Route Stops */}
-      <View style={styles.stopsContainer}>
-        <Text style={styles.sectionTitle}>Route Stops</Text>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {routeStops.map((stop, index) => (
-            <TouchableOpacity
-              key={stop.id}
-              style={styles.stopItem}
-              onPress={() => handleStopPress(stop)}
-            >
-              <View style={styles.stopIconContainer}>
-                <Ionicons 
-                  name={getStopIcon(stop.type)} 
-                  size={20} 
-                  color={getStopColor(stop.type)} 
-                />
-                {index < routeStops.length - 1 && (
-                  <View style={[styles.stopLine, { backgroundColor: getStopColor(stop.type) }]} />
-                )}
-              </View>
-              
-              <View style={styles.stopContent}>
-                <View style={styles.stopHeader}>
-                  <Text style={styles.stopLocation}>{stop.location}</Text>
-                  <Text style={styles.stopTime}>{stop.time}</Text>
+            <View style={styles.routeDetails}>
+              <View style={styles.routeInfo}>
+                <View style={styles.locationRow}>
+                  <Ionicons name="location" size={16} color="#007AFF" />
+                  <Text style={styles.locationText}>{currentLoad.pickup}</Text>
                 </View>
-                <Text style={styles.stopType}>{stop.type.toUpperCase()}</Text>
-                {stop.status === 'completed' && (
-                  <View style={styles.completedBadge}>
-                    <Text style={styles.completedText}>Completed</Text>
-                  </View>
-                )}
+                <View style={styles.routeLine} />
+                <View style={styles.locationRow}>
+                  <Ionicons name="location" size={16} color="#FF3B30" />
+                  <Text style={styles.locationText}>{currentLoad.delivery}</Text>
+                </View>
               </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+              <View style={styles.routeStats}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>ETA</Text>
+                  <Text style={styles.statValue}>{currentLoad.eta}</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>Distance</Text>
+                  <Text style={styles.statValue}>{currentLoad.distance}</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>Duration</Text>
+                  <Text style={styles.statValue}>{currentLoad.duration}</Text>
+                </View>
+              </View>
+            </View>
+          </View>
 
-      {/* Quick Actions */}
-      <View style={styles.quickActions}>
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="water" size={24} color="#FF9500" />
-          <Text style={styles.actionText}>Fuel</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="bed" size={24} color="#34C759" />
-          <Text style={styles.actionText}>Rest</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="warning" size={24} color="#FF3B30" />
-          <Text style={styles.actionText}>Traffic</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="card" size={24} color="#AF52DE" />
-          <Text style={styles.actionText}>Tolls</Text>
-        </TouchableOpacity>
+          {/* Route Stops */}
+          <View style={styles.stopsContainer}>
+            <Text style={styles.sectionTitle}>Route Stops</Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {routeStops.map((stop, index) => (
+                <TouchableOpacity
+                  key={stop.id}
+                  style={styles.stopItem}
+                  onPress={() => handleStopPress(stop)}
+                >
+                  <View style={styles.stopIconContainer}>
+                    <Ionicons 
+                      name={getStopIcon(stop.type)} 
+                      size={20} 
+                      color={getStopColor(stop.type)} 
+                    />
+                    {index < routeStops.length - 1 && (
+                      <View style={[styles.stopLine, { backgroundColor: getStopColor(stop.type) }]} />
+                    )}
+                  </View>
+                  <View style={styles.stopContent}>
+                    <View style={styles.stopHeader}>
+                      <Text style={styles.stopLocation}>{stop.location}</Text>
+                      <Text style={styles.stopTime}>{stop.time}</Text>
+                    </View>
+                    <Text style={styles.stopType}>{stop.type.toUpperCase()}</Text>
+                    {stop.status === 'completed' && (
+                      <View style={styles.completedBadge}>
+                        <Text style={styles.completedText}>Completed</Text>
+                      </View>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Quick Actions */}
+          <View style={styles.quickActions}>
+            <TouchableOpacity style={styles.actionButton}>
+              <Ionicons name="water" size={24} color="#FF9500" />
+              <Text style={styles.actionText}>Fuel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton}>
+              <Ionicons name="bed" size={24} color="#34C759" />
+              <Text style={styles.actionText}>Rest</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton}>
+              <Ionicons name="warning" size={24} color="#FF3B30" />
+              <Text style={styles.actionText}>Traffic</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton}>
+              <Ionicons name="card" size={24} color="#AF52DE" />
+              <Text style={styles.actionText}>Tolls</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </BottomSheet>
       </View>
-    </View>
-  );
+    );  
 };
 
 const styles = StyleSheet.create({
@@ -269,13 +322,9 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   mapContainer: {
-    height: 300,
-    marginHorizontal: 20,
-    marginBottom: 16,
-    borderRadius: 16,
-    overflow: 'hidden',
-    position: 'relative',
-  },
+  ...StyleSheet.absoluteFillObject,
+  zIndex: 0,
+},
   mapPlaceholder: {
     flex: 1,
     backgroundColor: '#f0f0f0',
@@ -294,10 +343,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   routeSummary: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: 'white',
     padding: 16,
     borderTopLeftRadius: 16,
@@ -356,7 +401,6 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
   },
   stopsContainer: {
-    flex: 1,
     marginHorizontal: 20,
     marginBottom: 16,
   },
