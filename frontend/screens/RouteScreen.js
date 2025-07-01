@@ -9,18 +9,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const RouteScreen = ({ navigation }) => {
-  const [currentRoute, setCurrentRoute] = useState({
-    pickup: 'Chicago, IL',
-    delivery: 'Dallas, TX',
-    eta: '2:30 PM',
-    distance: '925 miles',
-    duration: '14h 30m',
-    fuelStops: 2,
-    tolls: 45,
-    traffic: 'Moderate',
-  });
-
+const RouteScreen = ({ navigation, currentLoad }) => {
+  
   const [routeStops, setRouteStops] = useState([
     {
       id: 1,
@@ -109,6 +99,32 @@ const RouteScreen = ({ navigation }) => {
     }
   };
 
+  if (!currentLoad) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Ionicons name="map-outline" size={80} color="#ccc" style={{ marginBottom: 24 }} />
+        <Text style={{ fontSize: 22, fontWeight: '600', color: '#444', marginBottom: 8 }}>
+          No active load
+        </Text>
+        <Text style={{ fontSize: 16, color: '#888', textAlign: 'center', marginBottom: 24 }}>
+          Accept a load to view your route and stops here.
+        </Text>
+        <TouchableOpacity
+          style={{
+            backgroundColor: '#007AFF',
+            paddingHorizontal: 32,
+            paddingVertical: 12,
+            borderRadius: 8,
+          }}
+          onPress={() => navigation.navigate('Loads')}
+        >
+          <Text style={{ color: 'white', fontWeight: '600', fontSize: 16 }}>Browse Loads</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -140,27 +156,27 @@ const RouteScreen = ({ navigation }) => {
             <View style={styles.routeInfo}>
               <View style={styles.locationRow}>
                 <Ionicons name="location" size={16} color="#007AFF" />
-                <Text style={styles.locationText}>{currentRoute.pickup}</Text>
+                <Text style={styles.locationText}>{currentLoad.pickup}</Text>
               </View>
               <View style={styles.routeLine} />
               <View style={styles.locationRow}>
                 <Ionicons name="location" size={16} color="#FF3B30" />
-                <Text style={styles.locationText}>{currentRoute.delivery}</Text>
+                <Text style={styles.locationText}>{currentLoad.delivery}</Text>
               </View>
             </View>
             
             <View style={styles.routeStats}>
               <View style={styles.statItem}>
                 <Text style={styles.statLabel}>ETA</Text>
-                <Text style={styles.statValue}>{currentRoute.eta}</Text>
+                <Text style={styles.statValue}>{currentLoad.eta}</Text>
               </View>
               <View style={styles.statItem}>
                 <Text style={styles.statLabel}>Distance</Text>
-                <Text style={styles.statValue}>{currentRoute.distance}</Text>
+                <Text style={styles.statValue}>{currentLoad.distance}</Text>
               </View>
               <View style={styles.statItem}>
                 <Text style={styles.statLabel}>Duration</Text>
-                <Text style={styles.statValue}>{currentRoute.duration}</Text>
+                <Text style={styles.statValue}>{currentLoad.duration}</Text>
               </View>
             </View>
           </View>

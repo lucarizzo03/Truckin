@@ -59,7 +59,19 @@ function TabNavigator({ currentLoad, setCurrentLoad }) {
       />
 
 
-      <Tab.Screen name="Route" component={RouteScreen} />
+      <Tab.Screen name="Route"
+        children={props => (
+          <RouteScreen {...props} currentLoad={currentLoad}/>
+        )}
+      />
+
+
+
+
+
+
+
+
       <Tab.Screen name="Finance" component={FinanceScreen} />
       <Tab.Screen name="Chat" component={ChatScreen} />
     </Tab.Navigator>
@@ -75,6 +87,10 @@ export default function App() {
     <View style={styles.container}>
       <StatusBar style="auto" />
       <NavigationContainer>
+
+
+
+
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           {!hasCompletedOnboarding ? (
             <Stack.Screen name="Onboarding">
@@ -103,18 +119,22 @@ export default function App() {
                   setCurrentLoad={setCurrentLoad}
                 />
               )}
-
-
-
-
-
-
-
-
-
             />
+           
+
+
+
+
+
+
+
+
           )}
         </Stack.Navigator>
+
+
+
+
       </NavigationContainer>
     </View>
   );
