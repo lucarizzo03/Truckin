@@ -26,7 +26,7 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "GOOGLE_API_KEY": "AIzaSyB5zsEGj5PMuwBExingzC46EAGWvb-g1QQ"
+      "GOOGLE_API_KEY": ""
     }
   }
 }

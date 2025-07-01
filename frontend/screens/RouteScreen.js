@@ -198,7 +198,6 @@ const RouteScreen = ({ navigation, currentLoad }) => {
         snapPoints={snapPoints}
         enablePanDownToClose={false}
         enableContentPanningGesture={true}
-        handleComponent={BottomSheetHandle}
       >
         <View style={{ padding: 16 }}>
           {/* Route Summary */}
