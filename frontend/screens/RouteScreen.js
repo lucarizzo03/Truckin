@@ -11,10 +11,8 @@ import { Ionicons } from '@expo/vector-icons';
 import MapView, { Marker } from 'react-native-maps';
 import Constants from 'expo-constants';
 import BottomSheet from '@gorhom/bottom-sheet';
-import { BottomSheetHandle } from '@gorhom/bottom-sheet';
 
 const GOOGLE_API_KEY = Constants.expoConfig.extra.GOOGLE_API_KEY;
-
 
 const RouteScreen = ({ navigation, currentLoad }) => {
   const [pickupCoords, setPickupCoords] = useState(null);
@@ -183,18 +181,10 @@ const RouteScreen = ({ navigation, currentLoad }) => {
         </MapView>
       </View>
 
-      {/* Header overlays the map */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Route Navigation</Text>
-        <TouchableOpacity style={styles.voiceButton} onPress={handleVoiceCommand}>
-          <Ionicons name="mic" size={24} color="#007AFF" />
-        </TouchableOpacity>
-      </View>
-
       {/* Bottom Sheet overlays the map */}
       <BottomSheet
         ref={bottomSheetRef}
-        index={1}
+        index={0}
         snapPoints={snapPoints}
         enablePanDownToClose={false}
         enableContentPanningGesture={true}
@@ -311,7 +301,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 16,
-  },
+    position: 'absolute', // Overlay the map
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1, // Lower than BottomSheet (which defaults to a higher zIndex)
+    backgroundColor: 'rgba(255,255,255,0.85)', // Optional: semi-transparent
+},
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
