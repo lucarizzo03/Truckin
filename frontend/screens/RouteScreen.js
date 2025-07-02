@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import MapView, { Marker } from 'react-native-maps';
 import Constants from 'expo-constants';
 import BottomSheet from '@gorhom/bottom-sheet';
+import 'react-native-gesture-handler';
 
 const GOOGLE_API_KEY = Constants.expoConfig.extra.GOOGLE_API_KEY;
 
@@ -182,15 +183,21 @@ const RouteScreen = ({ navigation, currentLoad }) => {
       </View>
 
       {/* Bottom Sheet overlays the map */}
-      <BottomSheet
-        ref={bottomSheetRef}
-        index={0}
-        snapPoints={snapPoints}
-        enablePanDownToClose={false}
-        enableContentPanningGesture={true}
-      >
-        <View style={{ padding: 16 }}>
+     <BottomSheet
+  ref={bottomSheetRef}
+  index={0}
+  snapPoints={['30%', '60%']}
+>
+  <View style={{ height: 100, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center' }}>
+    <Text>Test Content</Text>
+  </View>
+</BottomSheet>
+
+
+
           {/* Route Summary */}
+          {/*
+        <View style={{ padding: 16 }}>
           <View style={styles.routeSummary}>
             <View style={styles.routeHeader}>
               <Text style={styles.routeTitle}>Current Route</Text>
@@ -226,45 +233,44 @@ const RouteScreen = ({ navigation, currentLoad }) => {
               </View>
             </View>
           </View>
+          */}
 
-          {/* Route Stops */}
+          {/* Next Stop */}
+          {/*
           <View style={styles.stopsContainer}>
-            <Text style={styles.sectionTitle}>Route Stops</Text>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {routeStops.map((stop, index) => (
+            <Text style={styles.sectionTitle}>Next Stop</Text>
+            {(() => {
+              // Find the first stop that is not completed
+              const nextStop = routeStops.find(stop => stop.status !== 'completed');
+              if (!nextStop) return <Text style={{ color: '#888' }}>No upcoming stops</Text>;
+              return (
                 <TouchableOpacity
-                  key={stop.id}
                   style={styles.stopItem}
-                  onPress={() => handleStopPress(stop)}
+                  onPress={() => handleStopPress(nextStop)}
                 >
                   <View style={styles.stopIconContainer}>
                     <Ionicons 
-                      name={getStopIcon(stop.type)} 
+                      name={getStopIcon(nextStop.type)} 
                       size={20} 
-                      color={getStopColor(stop.type)} 
+                      color={getStopColor(nextStop.type)} 
                     />
-                    {index < routeStops.length - 1 && (
-                      <View style={[styles.stopLine, { backgroundColor: getStopColor(stop.type) }]} />
-                    )}
                   </View>
                   <View style={styles.stopContent}>
                     <View style={styles.stopHeader}>
-                      <Text style={styles.stopLocation}>{stop.location}</Text>
-                      <Text style={styles.stopTime}>{stop.time}</Text>
+                      <Text style={styles.stopLocation}>{nextStop.location}</Text>
+                      <Text style={styles.stopTime}>{nextStop.time}</Text>
                     </View>
-                    <Text style={styles.stopType}>{stop.type.toUpperCase()}</Text>
-                    {stop.status === 'completed' && (
-                      <View style={styles.completedBadge}>
-                        <Text style={styles.completedText}>Completed</Text>
-                      </View>
-                    )}
+                    <Text style={styles.stopType}>{nextStop.type.toUpperCase()}</Text>
                   </View>
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
+              );
+            })()}
           </View>
+          */}
 
+          
           {/* Quick Actions */}
+          {/*
           <View style={styles.quickActions}>
             <TouchableOpacity style={styles.actionButton}>
               <Ionicons name="water" size={24} color="#FF9500" />
@@ -285,6 +291,13 @@ const RouteScreen = ({ navigation, currentLoad }) => {
           </View>
         </View>
       </BottomSheet>
+      */}
+      
+
+
+
+
+
       </View>
     );  
 };
