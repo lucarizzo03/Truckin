@@ -184,14 +184,14 @@ const RouteScreen = ({ navigation, currentLoad }) => {
 
       {/* Bottom Sheet overlays the map */}
      <BottomSheet
-  ref={bottomSheetRef}
-  index={0}
-  snapPoints={['30%', '60%']}
->
-  <View style={{ height: 100, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center' }}>
-    <Text>Test Content</Text>
-  </View>
-</BottomSheet>
+      ref={bottomSheetRef}
+      index={0}
+      snapPoints={['30%', '60%']}
+    >
+      <View style={{ height: 100, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center' }}>
+        <Text>Test Content</Text>
+      </View>
+    </BottomSheet>
 
 
 
