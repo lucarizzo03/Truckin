@@ -21,7 +21,7 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = frontend/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = frontend/Info.plist; sourceTree = "<group>"; };
 		14043BAEB12D8B9DE7B64647 /* libPods-frontend.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-frontend.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		3631EEAEA8A280BC18152E9E /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = frontend/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		3631EEAEA8A280BC18152E9E /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = frontend/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		485D7E759AB25A0E7EAE6FF7 /* Pods-frontend.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-frontend.release.xcconfig"; path = "Target Support Files/Pods-frontend/Pods-frontend.release.xcconfig"; sourceTree = "<group>"; };
 		87DED30AE7FB4AED066DBF49 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-frontend/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = frontend/SplashScreen.storyboard; sourceTree = "<group>"; };
@@ -73,7 +73,6 @@
 				D7957AD2279F343E1A855010 /* Pods-frontend.debug.xcconfig */,
 				485D7E759AB25A0E7EAE6FF7 /* Pods-frontend.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -140,6 +139,7 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "frontend" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
+				9024A0C82E1785C8005CD17C /* ShellScript */,
 				3D5468DF49B624DB5882E78A /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
@@ -296,6 +296,23 @@
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-frontend/Pods-frontend-resources.sh\"\n";
 			showEnvVarsInLog = 0;
+		};
+		9024A0C82E1785C8005CD17C /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n# Remove resource forks and extended attributes before code signing\nfind \"$TARGET_BUILD_DIR/$TARGET_NAME.app\" -exec xattr -cr {} +s\n";
 		};
 		B45095483E7CE2BAB05C652F /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;

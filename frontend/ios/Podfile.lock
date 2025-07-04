@@ -276,7 +276,7 @@ PODS:
     - ExpoModulesCore
   - ExpoKeepAwake (14.1.4):
     - ExpoModulesCore
-  - ExpoModulesCore (2.4.0):
+  - ExpoModulesCore (2.4.2):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -2474,7 +2474,7 @@ SPEC CHECKSUMS:
   ExpoFileSystem: c36eb8155eb2381c83dda7dc210e3eec332368b6
   ExpoFont: abbb91a911eb961652c2b0a22eef801860425ed6
   ExpoKeepAwake: bf0811570c8da182bfb879169437d4de298376e7
-  ExpoModulesCore: d431ffe83c8673d02cb38425594a5f5480fd3061
+  ExpoModulesCore: e0409d8c674a651a183e941be663e1966b49e2a2
   EXUpdatesInterface: 7ff005b7af94ee63fa452ea7bb95d7a8ff40277a
   fast_float: 06eeec4fe712a76acc9376682e4808b05ce978b6
   FBLazyVector: d2a9cd223302b6c9aa4aa34c1a775e9db609eb52
@@ -2550,6 +2550,6 @@ SPEC CHECKSUMS:
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: adb397651e1c00672c12e9495babca70777e411e
 
-PODFILE CHECKSUM: 7a986ce89db3e1b900bf15a68c7e70cd99559ee9
+PODFILE CHECKSUM: 9cd4bc10680f76b31244b3688f73dad6addba286
 
 COCOAPODS: 1.16.2

@@ -2586,6 +2586,13 @@ expo-modules-autolinking@2.1.12:
     require-from-string "^2.0.2"
     resolve-from "^5.0.0"
 
+expo-modules-core@~2.4.2:
+  version "2.4.2"
+  resolved "https://registry.npmjs.org/expo-modules-core/-/expo-modules-core-2.4.2.tgz"
+  integrity sha512-RCb0wniYCJkxwpXrkiBA/WiNGxzYsEpL0sB50gTnS/zEfX3DImS2npc4lfZ3hPZo1UF9YC6OSI9Do+iacV0NUg==
+  dependencies:
+    invariant "^2.2.4"
+
 expo-modules-core@2.4.0:
   version "2.4.0"
   resolved "https://registry.npmjs.org/expo-modules-core/-/expo-modules-core-2.4.0.tgz"
