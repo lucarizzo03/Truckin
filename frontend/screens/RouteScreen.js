@@ -187,16 +187,9 @@ const RouteScreen = ({ navigation, currentLoad }) => {
       ref={bottomSheetRef}
       index={0}
       snapPoints={['30%', '60%']}
-    >
-      <View style={{ height: 100, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center' }}>
-        <Text>Test Content</Text>
-      </View>
-    </BottomSheet>
-
-
-
+      >
+    
           {/* Route Summary */}
-          {/*
         <View style={{ padding: 16 }}>
           <View style={styles.routeSummary}>
             <View style={styles.routeHeader}>
@@ -233,10 +226,8 @@ const RouteScreen = ({ navigation, currentLoad }) => {
               </View>
             </View>
           </View>
-          */}
 
           {/* Next Stop */}
-          {/*
           <View style={styles.stopsContainer}>
             <Text style={styles.sectionTitle}>Next Stop</Text>
             {(() => {
@@ -266,11 +257,10 @@ const RouteScreen = ({ navigation, currentLoad }) => {
               );
             })()}
           </View>
-          */}
+  
 
           
           {/* Quick Actions */}
-          {/*
           <View style={styles.quickActions}>
             <TouchableOpacity style={styles.actionButton}>
               <Ionicons name="water" size={24} color="#FF9500" />
@@ -291,7 +281,7 @@ const RouteScreen = ({ navigation, currentLoad }) => {
           </View>
         </View>
       </BottomSheet>
-      */}
+    
       
 
 
