@@ -1,4 +1,47 @@
-# Ignore all .env files
-.env
-frontend/.env
-backend/.envapp.json
+# Create/update .gitignore in the root AutoPilot directory
+cat > .gitignore << 'EOF'
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Expo
+.expo/
+frontend/.expo/
+dist/
+web-build/
+
+# Native
+frontend/ios/build/
+frontend/ios/DerivedData/
+frontend/ios/Pods/
+frontend/android/build/
+frontend/android/app/build/
+frontend/android/.gradle/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# Debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# Temporary files
+frontend/logger-mock.js
+EOF
