@@ -4,7 +4,7 @@ Backend:
 - cd backend 
 - node index
 
-# Frontend
+Frontend
 - cd frontend
 - npx expo start
 
