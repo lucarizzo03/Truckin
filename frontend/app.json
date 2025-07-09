@@ -24,6 +24,9 @@
     },
     "extra": {
       "GOOGLE_API_KEY": "your-google-api-key-here"
-    }
+    },
+    "plugins": [
+      "expo-dev-client"
+    ]
   }
 }
