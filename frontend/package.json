@@ -3,37 +3,29 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "expo start --dev-client",
-    "ios": "expo run:ios",
-    "clean": "rm -rf node_modules ios android && rm -rf .expo && rm package-lock.json && rm -rf ~/Library/Developer/Xcode/DerivedData",
-    "reset": "watchman watch-del-all && npm run clean && npm install && npx expo prebuild --clean --platform ios",
-    "pods": "cd ios && pod install --repo-update && cd ..",
-    "android": "expo run:android"
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
-    "@gorhom/bottom-sheet": "^4.6.4",
-    "@react-navigation/bottom-tabs": "^7.1.5",
+    "@gorhom/bottom-sheet": "^5.1.6",
+    "@react-navigation/bottom-tabs": "^7.4.2",
     "@react-navigation/native": "^7.1.14",
     "@react-navigation/stack": "^7.4.2",
-    "expo": "~53.0.13",
-    "expo-constants": "^17.1.7",
-    "expo-dev-client": "~5.2.3",
-    "expo-modules-core": "~2.4.2",
-    "expo-splash-screen": "~0.30.10",
+    "expo": "~53.0.17",
     "expo-status-bar": "~2.2.3",
     "react": "19.0.0",
     "react-native": "0.79.5",
     "react-native-gesture-handler": "~2.24.0",
-    "react-native-maps": "^1.24.3",
+    "react-native-maps": "1.20.1",
     "react-native-safe-area-context": "5.4.0",
-    "react-native-screens": "4.11.1"
+    "react-native-screens": "~4.11.1",
+    "react-native-reanimated": "~3.17.4"
   },
   "devDependencies": {
-    "@babel/core": "^7.26.0",
-    "@react-native-community/cli": "^12.3.5",
-    "@react-native-community/cli-platform-ios": "^12.3.5",
-    "@react-native/metro-config": "^0.80.1",
-    "babel-preset-expo": "~13.0.0"
-  }
+    "@babel/core": "^7.20.0"
+  },
+  "private": true
 }
