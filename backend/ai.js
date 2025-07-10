@@ -25,34 +25,88 @@ async function transcribeVoice(audioFilePath) {
     }
 }
 
+const cityRegex = /loads? to ([a-zA-Z\s]+)[?.!]?/i;
+const acceptLoadRegex = /accept (?:the )?load ([a-zA-Z0-9]+)/i;
 
-// AI chat response for trucking response
-// ...existing code...
+// Remove backend-side city filtering and let the AI handle all queries
+// Limit loads to 12 and format as a readable list in the system prompt
 
-// Enhanced AI chat response that can handle load actions
+function formatLoadsForPrompt(loads) {
+    return loads.map(load =>
+        `- ${load.id}: ${load.pickup} → ${load.delivery} | $${load.pay} | ${load.pickupTime}${load.urgent ? ' | URGENT' : ''}`
+    ).join("\n");
+}
+
 async function generateChatResponse(userMessage, conversationHistory = [], currentLoads = []) {
     try {
+        userMessage = typeof userMessage === "string" ? userMessage : "";
+        conversationHistory = (conversationHistory || []).filter(
+            m => typeof m.content === "string"
+        );
+        const safeLoads = Array.isArray(currentLoads) ? currentLoads.slice(0, 12) : [];
+        const formattedLoads = formatLoadsForPrompt(safeLoads);
+        const systemPrompt = `You are an AI assistant for AutoPilot, a trucking management app.
+
+You have access to the following available loads:
+${formattedLoads}
+
+When the user wants to accept a load (for example, after asking for the highest paying load or a specific load), ALWAYS use the accept_load function call with the load ID and a confirmation message. Do not just reply in text—use the function call so the app can process the action.
+
+When listing loads, ALWAYS include the load ID. When the user refers to 'the highest one', 'the first one', or similar, infer the correct load ID from the previous list and use it in the function call.
+
+When the user asks about loads, ALWAYS:
+- Filter the loads based on their request (city, state, pay, urgency, ID, etc.).
+- List the matching loads in a clear, readable format, showing: ID, pickup, delivery, pay, pickup time, and urgency if present.
+- If no loads match, say so.
+- If the user wants to accept a load, use the accept_load function call.
+- If the user asks for details about a load, show all info for that load.
+- If the user asks for the highest paying or urgent loads, show those.
+- Do not say 'I'm here to help.'
+
+Examples:
+User: "Show me the highest paying loads to Miami"
+Response:
+Here are the highest paying loads to Miami:
+- L010: Charlotte, NC → Miami, FL | $2400 | Tomorrow 6:00 AM
+- L006: Atlanta, GA → Miami, FL | $2100 | Today 3:00 PM
+
+User: "Accept the highest one"
+Response:
+(Function call: accept_load with loadId: L010, confirmation: "Accepting the highest paying load L010 for you now.")
+
+User: "Book the highest paying load"
+Response:
+(Function call: accept_load with loadId: L011, confirmation: "The highest paying load is L011: Chicago, IL → Dallas, TX | $2800 | Today 1:00 PM. Accepting this load for you now.")
+
+User: "Show me loads to Chicago"
+Response:
+Here are loads to Chicago:
+- L001: Minneapolis, MN → Chicago, IL | $1300 | Today 2:00 PM
+- L002: Detroit, MI → Chicago, IL | $1800 | Today 4:30 PM
+
+User: "Show me urgent loads"
+Response:
+Here are urgent loads:
+- L003: Indianapolis, IN → Chicago, IL | $950 | Tomorrow 8:00 AM | URGENT
+- L005: St. Louis, MO → Chicago, IL | $1400 | Tomorrow 10:00 AM | URGENT
+
+User: "Show me details for L001"
+Response:
+Details for L001:
+Pickup: Minneapolis, MN
+Delivery: Chicago, IL
+Pay: $1300
+Pickup Time: Today 2:00 PM
+Type: Dry Van
+Equipment: 53' Dry Van
+Broker: Twin Cities Freight
+Urgent: Yes
+`
+        
         const messages = [
             {
                 role: "system", 
-                content: `You are an AI assistant for AutoPilot, a trucking management app. 
-                
-                You have access to current available loads and can help drivers:
-                1. Find and filter loads
-                2. Accept loads directly through chat
-                3. Get load details
-                4. Navigate to screens
-                
-                Available loads: ${JSON.stringify(currentLoads)}
-                
-                When users want to accept a load, respond with an action to accept it.
-                When they ask about loads, you can show them details and offer to accept.
-                
-                Examples:
-                "Accept the Dallas load" -> Find Dallas load and accept it
-                "Book the highest paying load" -> Accept the load with highest pay
-                "I'll take load L001" -> Accept load with ID L001
-                "Show me loads to Miami" -> Filter and display Miami loads with option to accept`
+                content: systemPrompt
             },
             ...conversationHistory,
             {
@@ -62,7 +116,7 @@ async function generateChatResponse(userMessage, conversationHistory = [], curre
         ];
 
         const completion = await openai.chat.completions.create({
-            model: "gpt-4",
+            model: "gpt-4o",
             messages: messages,
             temperature: 0.7,
             max_tokens: 500,
@@ -126,10 +180,10 @@ async function generateChatResponse(userMessage, conversationHistory = [], curre
         const response = completion.choices[0].message;
         
         // Check if AI wants to trigger an action
-        if (response.function_call) {
-            const functionName = response.function_call.name;
-            const functionArgs = JSON.parse(response.function_call.arguments);
-            
+        if (response.tool_calls && response.tool_calls.length > 0) {
+            const toolCall = response.tool_calls[0];
+            const functionName = toolCall.function.name;
+            const functionArgs = JSON.parse(toolCall.function.arguments);
             return {
                 text: response.content || getDefaultActionMessage(functionName, functionArgs),
                 action: {
@@ -140,7 +194,7 @@ async function generateChatResponse(userMessage, conversationHistory = [], curre
         }
 
         return {
-            text: response.content,
+            text: response.content || "I'm here to help! Please try rephrasing your request.",
             action: null
         };
 
@@ -164,13 +218,13 @@ function getDefaultActionMessage(functionName, args) {
 }
 
 // Main handler for voice-to-chat flow
-async function handleVoiceToChat(audioFilePath, conversationHistory = []) {
+async function handleVoiceToChat(audioFilePath, conversationHistory = [], currentLoads = []) {
     try {
         // Step 1: Transcribe voice to text
         const transcription = await transcribeVoice(audioFilePath);
         
         // Step 2: Generate AI response
-        const aiResponse = await generateChatResponse(transcription, conversationHistory);
+        const aiResponse = await generateChatResponse(transcription, conversationHistory, currentLoads);
         
         // Step 3: Return complete chat exchange
         return {
@@ -211,7 +265,7 @@ async function streamChatResponse(userMessage, conversationHistory = []) {
         ];
 
         const stream = await openai.chat.completions.create({
-            model: "gpt-4",
+            model: "gpt-4o",
             messages: messages,
             temperature: 0.7,
             max_tokens: 500,

@@ -10,14 +10,47 @@ import {
   ActivityIndicator 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Audio } from 'expo-av';
 
-// ...existing imports...
+// Helper to detect and render loads with Accept buttons in AI messages
+function renderMessageText(message, handleLoadAcceptance) {
+  // Only process AI messages
+  if (!message.isUser && typeof message.text === 'string' && message.text.match(/- L\d{3,}/)) {
+    // Split message into lines
+    const lines = message.text.split('\n');
+    return lines.map((line, idx) => {
+      const loadMatch = line.match(/- (L\d+): (.+?) → (.+?) \| \$(\d+) \| (.+)/);
+      if (loadMatch) {
+        const loadId = loadMatch[1];
+        return (
+          <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+            <Text style={message.isUser ? styles.userMessageText : styles.aiMessageText}>{line}</Text>
+            <TouchableOpacity
+              style={{ marginLeft: 8, backgroundColor: '#007AFF', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}
+              onPress={() => handleLoadAcceptance(loadId)}
+            >
+              <Text style={{ color: 'white', fontSize: 14 }}>Accept</Text>
+            </TouchableOpacity>
+          </View>
+        );
+      } else {
+        return (
+          <Text key={idx} style={message.isUser ? styles.userMessageText : styles.aiMessageText}>{line}</Text>
+        );
+      }
+    });
+  }
+  // Default: just render the text
+  return <Text style={message.isUser ? styles.userMessageText : styles.aiMessageText}>{message.text}</Text>;
+}
 
-const ChatScreen = ({ route, navigation, setCurrentLoad }) => { // Add setCurrentLoad prop
+const ChatScreen = ({ route, navigation, setCurrentLoad }) => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentLoads, setCurrentLoads] = useState([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recording, setRecording] = useState(null);
   const scrollViewRef = useRef();
 
   // Fetch current loads when component mounts
@@ -46,9 +79,53 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => { // Add setCurren
     }
   };
 
+  const startRecording = async () => {
+    try {
+      const { status } = await Audio.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Please allow microphone access');
+        return;
+      }
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      
+      setRecording(recording);
+      setIsRecording(true);
+    } catch (err) {
+      console.error('Failed to start recording', err);
+      Alert.alert('Error', 'Failed to start recording');
+    }
+  };
+
+  const stopRecording = async () => {
+    try {
+      setIsRecording(false);
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+      
+      // Process the voice message
+      await handleVoiceMessage(uri);
+      
+      setRecording(null);
+    } catch (err) {
+      console.error('Failed to stop recording', err);
+      Alert.alert('Error', 'Failed to stop recording');
+    }
+  };
+
   const handleVoiceMessage = async (audioUri) => {
     try {
       setIsLoading(true);
+      
+      // Always fetch fresh loads before processing voice message
+      await fetchCurrentLoads();
       
       // Create form data for file upload
       const formData = new FormData();
@@ -61,6 +138,7 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => { // Add setCurren
         role: msg.isUser ? 'user' : 'assistant',
         content: msg.text
       }))));
+      formData.append('currentLoads', JSON.stringify(currentLoads));
 
       // Send voice message to backend
       const response = await fetch('http://localhost:2300/api/voice-to-chat', {
@@ -86,7 +164,7 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => { // Add setCurren
         // Add AI response
         const aiMessage = {
           id: Date.now() + 1,
-          text: result.aiResponse.text || result.aiResponse,
+          text: typeof result.aiResponse === 'object' ? result.aiResponse.text : result.aiResponse,
           isUser: false,
           timestamp: new Date()
         };
@@ -142,6 +220,9 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => { // Add setCurren
         
         setMessages(prev => [...prev, confirmationMessage]);
         
+        // Re-fetch loads to keep the list current
+        await fetchCurrentLoads();
+        
         Alert.alert(
           'Load Accepted!', 
           `You've accepted load ${loadId}. Would you like to start navigation?`,
@@ -172,6 +253,9 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => { // Add setCurren
     setIsLoading(true);
 
     try {
+      // Always fetch fresh loads before sending message to ensure AI has current data
+      await fetchCurrentLoads();
+      
       const response = await fetch('http://localhost:2300/api/chat', {
         method: 'POST',
         headers: {
@@ -234,15 +318,18 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => { // Add setCurren
 
   return (
     <View style={styles.container}>
+      {/* Header: App title */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>AutoPilot Assistant</Text>
       </View>
 
+      {/* Messages ScrollView: Shows chat history */}
       <ScrollView 
         ref={scrollViewRef}
         style={styles.messagesContainer}
         onContentSizeChange={() => scrollViewRef.current?.scrollToEnd()}
       >
+        {/* Render each chat message */}
         {messages.map((message) => (
           <View
             key={message.id}
@@ -251,17 +338,14 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => { // Add setCurren
               message.isUser ? styles.userMessage : styles.aiMessage
             ]}
           >
-            <Text style={[
-              styles.messageText,
-              message.isUser ? styles.userMessageText : styles.aiMessageText
-            ]}>
-              {message.text}
-            </Text>
+            {renderMessageText(message, handleLoadAcceptance)}
             {message.isProcessing && (
               <ActivityIndicator size="small" color="#666" style={{ marginTop: 5 }} />
             )}
           </View>
         ))}
+
+        {/* Typing indicator when AI is responding */}
         {isLoading && (
           <View style={styles.typingIndicator}>
             <ActivityIndicator size="small" color="#007AFF" />
@@ -270,6 +354,7 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => { // Add setCurren
         )}
       </ScrollView>
 
+      {/* Input area: Text input and send button */}
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.textInput}
@@ -287,6 +372,24 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => { // Add setCurren
           <Ionicons name="send" size={20} color="white" />
         </TouchableOpacity>
       </View>
+
+
+      {/* Floating Voice Button: mic/stop button for voice input */}
+      <TouchableOpacity
+        style={[styles.voiceButton, isRecording && styles.voiceButtonActive]}
+        onPress={isRecording ? stopRecording : startRecording}
+        activeOpacity={0.8}
+      >
+        <Ionicons 
+          name={isRecording ? "stop" : "mic"} 
+          size={28} 
+          color="white" 
+        />
+      </TouchableOpacity>
+
+
+
+
     </View>
   );
 };
@@ -374,6 +477,27 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: '#ccc',
+  },
+  voiceButton: {
+    position: 'absolute',
+    bottom: 100,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 1000,
+  },
+  voiceButtonActive: {
+    backgroundColor: '#FF3B30',
+    transform: [{ scale: 1.1 }],
   },
 });
 

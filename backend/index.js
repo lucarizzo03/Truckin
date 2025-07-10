@@ -325,7 +325,14 @@ app.post('/api/voice-to-chat', upload.single('audio'), async (req, res) => {
         }
 
         const conversationHistory = req.body.history ? JSON.parse(req.body.history) : [];
-        const result = await handleVoiceToChat(req.file.path, conversationHistory);
+        const currentLoads = req.body.currentLoads ? JSON.parse(req.body.currentLoads) : [];
+        
+        console.log('Voice-to-chat endpoint received:', { 
+            historyLength: conversationHistory?.length, 
+            loadsCount: currentLoads?.length 
+        });
+        
+        const result = await handleVoiceToChat(req.file.path, conversationHistory, currentLoads);
 
         // Clean up uploaded file
         fs.unlinkSync(req.file.path);
@@ -345,6 +352,42 @@ app.post('/api/voice-to-chat', upload.single('audio'), async (req, res) => {
 app.post('/api/chat', async (req, res) => {
     try {
         const { message, history, currentLoads } = req.body;
+
+        // Directly handle 'accept load L001' style messages
+        const acceptLoadDirectRegex = /accept (?:the )?load ([a-zA-Z0-9]+)/i;
+        const acceptMatch = message && message.match(acceptLoadDirectRegex);
+        if (acceptMatch && acceptMatch[1]) {
+            const loadId = acceptMatch[1];
+            const load = (currentLoads || []).find(l => l.id === loadId);
+            if (load) {
+                return res.json({
+                    success: true,
+                    userMessage: message,
+                    aiResponse: `✅ Load ${loadId} accepted successfully!\n\n📍 ${load.pickup} → ${load.delivery}\n💰 $${load.pay.toLocaleString()}\n📏 ${load.distance}\n⏰ ${load.pickupTime}`,
+                    action: {
+                        type: 'accept_load',
+                        loadId: loadId
+                    },
+                    timestamp: new Date().toISOString()
+                });
+            } else {
+                return res.json({
+                    success: true,
+                    userMessage: message,
+                    aiResponse: `Sorry, I couldn't find load ${loadId}.`,
+                    action: null,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
+
+        console.log(message)
+        
+        console.log('Chat endpoint received:', { 
+            messageLength: message?.length, 
+            historyLength: history?.length, 
+            loadsCount: currentLoads?.length 
+        });
         
         if (!message) {
             return res.status(400).json({ 
