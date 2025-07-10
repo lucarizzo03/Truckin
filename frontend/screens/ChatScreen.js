@@ -12,38 +12,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 
-// Helper to detect and render loads with Accept buttons in AI messages
-function renderMessageText(message, handleLoadAcceptance) {
-  // Only process AI messages
-  if (!message.isUser && typeof message.text === 'string' && message.text.match(/- L\d{3,}/)) {
-    // Split message into lines
-    const lines = message.text.split('\n');
-    return lines.map((line, idx) => {
-      const loadMatch = line.match(/- (L\d+): (.+?) → (.+?) \| \$(\d+) \| (.+)/);
-      if (loadMatch) {
-        const loadId = loadMatch[1];
-        return (
-          <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-            <Text style={message.isUser ? styles.userMessageText : styles.aiMessageText}>{line}</Text>
-            <TouchableOpacity
-              style={{ marginLeft: 8, backgroundColor: '#007AFF', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}
-              onPress={() => handleLoadAcceptance(loadId)}
-            >
-              <Text style={{ color: 'white', fontSize: 14 }}>Accept</Text>
-            </TouchableOpacity>
-          </View>
-        );
-      } else {
-        return (
-          <Text key={idx} style={message.isUser ? styles.userMessageText : styles.aiMessageText}>{line}</Text>
-        );
-      }
-    });
-  }
-  // Default: just render the text
-  return <Text style={message.isUser ? styles.userMessageText : styles.aiMessageText}>{message.text}</Text>;
-}
-
 const ChatScreen = ({ route, navigation, setCurrentLoad }) => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
@@ -295,7 +263,6 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => {
     }
   };
 
-
   // Add this function after handleLoadAcceptance
   const showLoadDetails = (loadIds) => {
     const loadDetails = loadIds.map(id => {
@@ -338,14 +305,17 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => {
               message.isUser ? styles.userMessage : styles.aiMessage
             ]}
           >
-            {renderMessageText(message, handleLoadAcceptance)}
+            <Text style={[
+              styles.messageText,
+              message.isUser ? styles.userMessageText : styles.aiMessageText
+            ]}>
+              {message.text}
+            </Text>
             {message.isProcessing && (
               <ActivityIndicator size="small" color="#666" style={{ marginTop: 5 }} />
             )}
           </View>
         ))}
-
-        {/* Typing indicator when AI is responding */}
         {isLoading && (
           <View style={styles.typingIndicator}>
             <ActivityIndicator size="small" color="#007AFF" />
@@ -373,7 +343,6 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => {
         </TouchableOpacity>
       </View>
 
-
       {/* Floating Voice Button: mic/stop button for voice input */}
       <TouchableOpacity
         style={[styles.voiceButton, isRecording && styles.voiceButtonActive]}
@@ -386,10 +355,6 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => {
           color="white" 
         />
       </TouchableOpacity>
-
-
-
-
     </View>
   );
 };
@@ -446,58 +411,59 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   typingText: {
+    color: '#007AFF',
     marginLeft: 8,
-    color: '#666',
-    fontStyle: 'italic',
+    fontSize: 16,
   },
   inputContainer: {
     flexDirection: 'row',
-    padding: 15,
-    backgroundColor: 'white',
     alignItems: 'flex-end',
+    padding: 10,
+    backgroundColor: 'white',
+    borderTopWidth: 1,
+    borderColor: '#e0e0e0',
   },
   textInput: {
     flex: 1,
+    minHeight: 40,
+    maxHeight: 100,
     borderWidth: 1,
     borderColor: '#e0e0e0',
     borderRadius: 20,
     paddingHorizontal: 15,
-    paddingVertical: 10,
-    marginRight: 10,
-    maxHeight: 100,
+    paddingVertical: 8,
     fontSize: 16,
+    backgroundColor: '#f9f9f9',
+    marginRight: 10,
   },
   sendButton: {
     backgroundColor: '#007AFF',
-    width: 40,
-    height: 40,
     borderRadius: 20,
+    padding: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
   sendButtonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#b0c4de',
   },
   voiceButton: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 80,
     right: 20,
+    backgroundColor: '#007AFF',
+    borderRadius: 30,
     width: 60,
     height: 60,
-    borderRadius: 30,
-    backgroundColor: '#007AFF',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    zIndex: 1000,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   voiceButtonActive: {
     backgroundColor: '#FF3B30',
-    transform: [{ scale: 1.1 }],
   },
 });
 
