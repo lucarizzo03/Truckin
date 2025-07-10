@@ -24,6 +24,9 @@
     },
     "extra": {
       "GOOGLE_API_KEY": "${GOOGLE_API_KEY}"
-    }
+    },
+    "permissions": [
+      "RECORD_AUDIO"
+    ]
   }
 }

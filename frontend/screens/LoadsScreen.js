@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,60 +10,65 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const LoadsScreen = ({ navigation, setCurrentLoad }) => {
+const LoadsScreen = ({ navigation, setCurrentLoad , route}) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
-  const [loads, setLoads] = useState([
-    {
-      id: 'L001',
-      pickup: 'Chicago, IL',
-      delivery: 'Dallas, TX',
-      pay: 2800,
-      distance: '925 miles',
-      pickupTime: 'Today 2:00 PM',
-      loadType: 'Dry Van',
-      equipment: '53\' Dry Van',
-      broker: 'ABC Logistics',
-      urgent: true,
-    },
-    {
-      id: 'L002',
-      pickup: 'Atlanta, GA',
-      delivery: 'Miami, FL',
-      pay: 2100,
-      distance: '665 miles',
-      pickupTime: 'Tomorrow 8:00 AM',
-      loadType: 'Reefer',
-      equipment: '53\' Reefer',
-      broker: 'XYZ Transport',
-      urgent: false,
-    },
-    {
-      id: 'L003',
-      pickup: 'Los Angeles, CA',
-      delivery: 'Phoenix, AZ',
-      pay: 1800,
-      distance: '372 miles',
-      pickupTime: 'Today 6:00 PM',
-      loadType: 'Flatbed',
-      equipment: '48\' Flatbed',
-      broker: 'West Coast Freight',
-      urgent: true,
-    },
-    {
-      id: 'L004',
-      pickup: 'Seattle, WA',
-      delivery: 'Portland, OR',
-      pay: 1200,
-      distance: '173 miles',
-      pickupTime: 'Tomorrow 10:00 AM',
-      loadType: 'Dry Van',
-      equipment: '53\' Dry Van',
-      broker: 'Pacific Hauling',
-      urgent: false,
-    },
-  ]);
 
+  // Fetch loads from backend
+  useEffect(() => {
+    fetchLoads();
+  }, []);
+
+  // NEW: Handle voice search parameters
+  useEffect(() => {
+    if (route.params && route) {
+      const { destination, origin, equipment_type, min_rate } = route.params;
+      
+      // Auto-fill search based on voice command
+      let autoSearch = '';
+      if (destination) {
+        autoSearch = destination;
+        setSearchQuery(destination);
+      }
+      if (origin) {
+        autoSearch = origin + (destination ? ` to ${destination}` : '');
+        setSearchQuery(autoSearch);
+      }
+      if (equipment_type) {
+        // Could add equipment filter logic here
+      }
+      if (min_rate) {
+        setSelectedFilter('high-pay'); // Auto-select high pay filter
+      }
+
+      // Clear params after processing to prevent re-triggering
+      navigation.setParams({
+        destination: null,
+        origin: null,
+        equipment_type: null,
+        min_rate: null
+      });
+    }
+  }, [route?.params]);
+
+  const fetchLoads = async () => {
+    try {
+      const response = await fetch('http://localhost:2300/api/loads');
+      const result = await response.json();
+      if (result.success) {
+        setLoads(result.loads);
+      } else {
+        console.error('Failed to fetch loads:', result.error);
+      }
+    } catch (error) {
+      console.error('Failed to fetch loads:', error);
+    }
+  };
+  
+  const [loads, setLoads] = useState([]);
+
+
+  
   const filters = [
     { key: 'all', label: 'All Loads' },
     { key: 'high-pay', label: 'High Pay' },

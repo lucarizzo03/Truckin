@@ -1,361 +1,436 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Audio } from 'expo-av';
 
-const HomeScreen = ({ navigation, currentLoad }) => {
+const HomeScreen = ({ navigation, currentLoad, setCurrentLoad }) => {
+  const [isRecording, setIsRecording] = useState(false);
+  const [recording, setRecording] = useState(null);
 
-  const [financials, setFinancials] = useState({
-    today: 450,
-    week: 3200,
-    month: 12800,
-  });
+  const startRecording = async () => {
+    try {
+      const { status } = await Audio.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Please allow microphone access');
+        return;
+      }
 
-  const [notifications, setNotifications] = useState([
-    { id: 1, type: 'load', message: 'New load offer: $2,100 for Chicago → Atlanta', time: '5m ago' },
-    { id: 2, type: 'weather', message: 'Weather alert: Heavy rain expected on I-90', time: '15m ago' },
-    { id: 3, type: 'compliance', message: 'HOS reminder: Break required in 2 hours', time: '1h ago' },
-  ]);
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
 
-  const handleVoiceAssistant = () => {
-    Alert.alert(
-      'Voice Assistant',
-      'Voice assistant activated. Say "Find loads near me" or "Show my route"',
-      [{ text: 'OK' }]
-    );
-  };
-
-  const handleLoadAction = (action) => {
-    if (action === 'accept') {
-      Alert.alert('Load Accepted', 'You\'ve accepted the current load assignment.');
-    } else if (action === 'decline') {
-      Alert.alert('Load Declined', 'You\'ve declined the current load assignment.');
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      
+      setRecording(recording);
+      setIsRecording(true);
+    } catch (err) {
+      console.error('Failed to start recording', err);
+      Alert.alert('Error', 'Failed to start recording');
     }
   };
 
-  const handleNotificationPress = (notification) => {
-    Alert.alert('Notification', notification.message);
+  const stopRecording = async () => {
+    try {
+      setIsRecording(false);
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+      
+      // Navigate to ChatScreen immediately
+      navigation.navigate('Chat', { voiceMessageUri: uri });
+      
+      setRecording(null);
+    } catch (err) {
+      console.error('Failed to stop recording', err);
+      Alert.alert('Error', 'Failed to stop recording');
+    }
+  };
+
+  const handleEndLoad = () => {
+    if (!setCurrentLoad || typeof setCurrentLoad !== 'function') {
+      Alert.alert('Error', 'Unable to end trip. Please try again.');
+      return;
+    }
+    
+    Alert.alert(
+      'End Trip',
+      'Are you sure you want to end this trip? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'End Trip', 
+          style: 'destructive', 
+          onPress: () => {
+            setCurrentLoad(null);
+            // You could add additional logic here like:
+            // - Saving trip data to history
+            // - Sending data to backend
+            // - Showing completion message
+          }
+        },
+      ]
+    );
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Good morning, Driver!</Text>
-            <Text style={styles.subtitle}>Ready to hit the road?</Text>
-          </View>
-          <TouchableOpacity style={styles.profileButton}>
-            <Ionicons name="person-circle" size={40} color="#007AFF" />
-          </TouchableOpacity>
-        </View>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <Text style={styles.title}>AutoPilot</Text>
+      <Text style={styles.subtitle}>Welcome back, driver!</Text>
 
-        {/* Current Load Card */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Current Load</Text>
-            <View style={styles.statusBadge}>
-              <Text style={styles.statusText}>
-                {currentLoad ? 'Active' : 'None'}
-              </Text>
+      {/* Current Load Info */}
+      <View style={styles.currentLoadCard}>
+        {currentLoad ? (
+          <>
+            {/* Header with status */}
+            <View style={styles.cardHeader}>
+              <View style={styles.statusContainer}>
+                <View style={styles.statusDot} />
+                <Text style={styles.statusText}>Active Trip</Text>
+              </View>
+              <TouchableOpacity 
+                style={styles.endTripButton} 
+                onPress={handleEndLoad}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="close" size={18} color="white" />
+                <Text style={styles.endTripButtonText}>End Trip</Text>
+              </TouchableOpacity>
             </View>
-          </View>
 
-          {currentLoad ? (
-            <>
-              <View style={styles.loadInfo}>
-                <View style={styles.routeInfo}>
-                  <View style={styles.locationRow}>
-                    <Ionicons name="location" size={16} color="#007AFF" />
-                    <Text style={styles.locationText}>{currentLoad.pickup || 'N/A'}</Text>
-                  </View>
-                  <View style={styles.routeLine} />
-                  <View style={styles.locationRow}>
-                    <Ionicons name="location" size={16} color="#FF3B30" />
-                    <Text style={styles.locationText}>{currentLoad.delivery || 'N/A'}</Text>
-                  </View>
+            {/* Route visualization */}
+            <View style={styles.routeContainer}>
+              <View style={styles.routeVisual}>
+                <View style={styles.pickupDot} />
+                <View style={styles.routeLine} />
+                <View style={styles.deliveryDot} />
+              </View>
+              <View style={styles.routeTexts}>
+                <Text style={styles.pickupLabel}>PICKUP</Text>
+                <Text style={styles.pickupAddress}>{currentLoad.pickup}</Text>
+                <View style={styles.routeSpacer} />
+                <Text style={styles.deliveryLabel}>DELIVERY</Text>
+                <Text style={styles.deliveryAddress}>{currentLoad.delivery}</Text>
+              </View>
+            </View>
+
+            {/* Trip details */}
+            <View style={styles.tripDetails}>
+              {currentLoad.equipment && (
+                <View style={styles.detailItem}>
+                  <Ionicons name="car" size={20} color="#007AFF" />
+                  <Text style={styles.detailLabel}>Equipment</Text>
+                  <Text style={styles.detailValue}>{currentLoad.equipment}</Text>
                 </View>
-                <View style={styles.loadDetails}>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Pay:</Text>
-                    <Text style={styles.detailValue}>
-                      {typeof currentLoad.pay === 'number'
-                        ? `$${currentLoad.pay.toLocaleString()}`
-                        : 'N/A'}
-                    </Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>ETA:</Text>
-                    <Text style={styles.detailValue}>
-                      {currentLoad.eta || currentLoad.pickupTime || 'N/A'}
-                    </Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Distance:</Text>
-                    <Text style={styles.detailValue}>
-                      {currentLoad.distance || 'N/A'}
-                    </Text>
-                  </View>
+              )}
+              {currentLoad.rate && (
+                <View style={styles.detailItem}>
+                  <Ionicons name="cash" size={20} color="#34C759" />
+                  <Text style={styles.detailLabel}>Rate</Text>
+                  <Text style={styles.detailValue}>${currentLoad.rate}</Text>
                 </View>
-              </View>
-            </>
-          ) : (
-            <Text style={{ color: '#666', marginBottom: 16 }}>
-              No load assigned. Accept a load to get started!
-            </Text>
-          )}
-        </View>
-                
-        {/* Financial Summary */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Financial Summary</Text>
-          <View style={styles.financialGrid}>
-            <View style={styles.financialItem}>
-              <Text style={styles.financialLabel}>Today</Text>
-              <Text style={styles.financialValue}>${financials.today}</Text>
+              )}
             </View>
-            <View style={styles.financialItem}>
-              <Text style={styles.financialLabel}>This Week</Text>
-              <Text style={styles.financialValue}>${financials.week.toLocaleString()}</Text>
-            </View>
-            <View style={styles.financialItem}>
-              <Text style={styles.financialLabel}>This Month</Text>
-              <Text style={styles.financialValue}>${financials.month.toLocaleString()}</Text>
-            </View>
+          </>
+        ) : (
+          <View style={styles.noTripContainer}>
+            <Ionicons name="car-outline" size={48} color="#C7C7CC" />
+            <Text style={styles.noTripTitle}>No Active Trip</Text>
+            <Text style={styles.noTripSubtitle}>Start a new load to begin your journey</Text>
           </View>
-        </View>
+        )}
+      </View>
 
-        {/* Notifications */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Notifications</Text>
-          {notifications.map((notification) => (
-            <TouchableOpacity
-              key={notification.id}
-              style={styles.notificationItem}
-              onPress={() => handleNotificationPress(notification)}
-            >
-              <View style={styles.notificationIcon}>
-                <Ionicons 
-                  name={
-                    notification.type === 'load' ? 'truck' :
-                    notification.type === 'weather' ? 'cloudy' : 'time'
-                  } 
-                  size={20} 
-                  color="#007AFF" 
-                />
-              </View>
-              <View style={styles.notificationContent}>
-                <Text style={styles.notificationText}>{notification.message}</Text>
-                <Text style={styles.notificationTime}>{notification.time}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color="#ccc" />
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
-
-      {/* Voice Assistant Button */}
-      <TouchableOpacity style={styles.voiceButton} onPress={handleVoiceAssistant}>
-        <Ionicons name="mic" size={32} color="white" />
+      {/* Voice Button */}
+      <TouchableOpacity
+        style={[styles.voiceButton, isRecording && styles.voiceButtonActive]}
+        onPress={isRecording ? stopRecording : startRecording}
+        activeOpacity={0.8}
+      >
+        <Ionicons 
+          name={isRecording ? "stop" : "mic"} 
+          size={32} 
+          color="white" 
+        />
+        <Text style={styles.voiceButtonText}>
+          {isRecording ? "Tap to Send" : "Ask AutoPilot"}
+        </Text>
       </TouchableOpacity>
-    </View>
+
+      {/* Quick Actions */}
+      <View style={styles.quickActions}>
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={() => navigation.navigate('Loads')}
+        >
+          <Ionicons name="list" size={24} color="#007AFF" />
+          <Text style={styles.actionText}>Find Loads</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={() => navigation.navigate('Route')}
+        >
+          <Ionicons name="map" size={24} color="#007AFF" />
+          <Text style={styles.actionText}>Route</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Notifications Section */}
+      <View style={styles.notificationsSection}>
+        <Text style={styles.notificationsTitle}>Notifications</Text>
+        {/*
+          This section is ready for dynamic notifications.
+          You can map over an array of notification objects, e.g.:
+          notifications.map((n, i) => (
+            <Text key={i} style={styles.notificationItem}>{n.icon} {n.text}</Text>
+          ))
+        */}
+        {/* Example static fallback if no notifications */}
+        <Text style={styles.notificationItem}>No notifications yet. Weather, tips, and alerts will appear here.</Text>
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    padding: 20,
+    paddingBottom: 40,
+    backgroundColor: '#f5f5f5',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-  },
-  greeting: {
-    fontSize: 24,
+  title: {
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    textAlign: 'center',
+    marginTop: 50,
+    color: '#333',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 18,
+    textAlign: 'center',
     color: '#666',
-    marginTop: 2,
+    marginBottom: 30,
   },
-  profileButton: {
-    padding: 4,
-  },
-  card: {
+  currentLoadCard: {
     backgroundColor: 'white',
-    marginHorizontal: 20,
-    marginBottom: 16,
+    padding: 24,
     borderRadius: 16,
-    padding: 20,
+    marginBottom: 30,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 5,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
-  statusBadge: {
-    backgroundColor: '#34C759',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  loadInfo: {
-    marginBottom: 16,
-  },
-  routeInfo: {
-    marginBottom: 16,
-  },
-  locationRow: {
+  statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 4,
+    backgroundColor: '#e6fbe8',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
-  locationText: {
-    fontSize: 16,
-    marginLeft: 8,
-    color: '#1a1a1a',
+  statusDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#22c55e',
+    marginRight: 5,
+  },
+  statusText: {
+    color: '#22c55e',
+    fontWeight: 'bold',
+    fontSize: 12,
+    letterSpacing: 0.5,
+  },
+  endTripButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FF3B30',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    shadowColor: '#FF3B30',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  endTripButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 12,
+    marginLeft: 5,
+  },
+  routeContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
+  routeVisual: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    marginRight: 16,
+    marginTop: 4,
+  },
+  pickupDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#34C759',
+    marginBottom: 8,
   },
   routeLine: {
     width: 2,
-    height: 20,
-    backgroundColor: '#ddd',
-    marginLeft: 7,
+    height: 40,
+    backgroundColor: '#E5E5EA',
     marginVertical: 4,
   },
-  loadDetails: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    padding: 16,
+  deliveryDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#FF3B30',
+    marginTop: 8,
   },
-  detailRow: {
+  routeTexts: {
+    flex: 1,
+  },
+  pickupLabel: {
+    fontSize: 11,
+    color: '#8E8E93',
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  pickupAddress: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1C1C1E',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  routeSpacer: {
+    height: 16,
+  },
+  deliveryLabel: {
+    fontSize: 11,
+    color: '#8E8E93',
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  deliveryAddress: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1C1C1E',
+    lineHeight: 20,
+  },
+  tripDetails: {
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#F2F2F7',
+  },
+  detailItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
+    alignItems: 'center',
+    marginBottom: 12,
   },
   detailLabel: {
     fontSize: 14,
-    color: '#666',
+    color: '#8E8E93',
+    marginLeft: 12,
+    flex: 1,
   },
   detailValue: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: '#1C1C1E',
   },
-  loadActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
+  noTripContainer: {
     alignItems: 'center',
+    paddingVertical: 30,
   },
-  acceptButton: {
-    backgroundColor: '#34C759',
-  },
-  declineButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#FF3B30',
-  },
-  actionButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: 'white',
-  },
-  financialGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  financialItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  financialLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  financialValue: {
-    fontSize: 20,
+  noTripTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#333',
+    marginTop: 15,
   },
-  notificationItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  notificationIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f0f8ff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  notificationContent: {
-    flex: 1,
-  },
-  notificationText: {
+  noTripSubtitle: {
     fontSize: 14,
-    color: '#1a1a1a',
-    marginBottom: 2,
-  },
-  notificationTime: {
-    fontSize: 12,
     color: '#666',
+    marginTop: 5,
   },
   voiceButton: {
-    position: 'absolute',
-    bottom: 30,
-    right: 30,
-    width: 70,
-    height: 70,
-    borderRadius: 35,
     backgroundColor: '#007AFF',
+    paddingVertical: 20,
+    paddingHorizontal: 30,
+    borderRadius: 25,
     alignItems: 'center',
-    justifyContent: 'center',
+    marginVertical: 30,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 5,
   },
+  voiceButtonActive: {
+    backgroundColor: '#FF3B30',
+  },
+  voiceButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 8,
+  },
+  quickActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 20,
+  },
+  actionButton: {
+    alignItems: 'center',
+    padding: 15,
+  },
+  actionText: {
+    color: '#007AFF',
+    fontSize: 14,
+    marginTop: 5,
+  },
+  notificationsSection: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 30,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  notificationsTitle: {
+    fontWeight: 'bold',
+    fontSize: 15,
+    color: '#333',
+    marginBottom: 8,
+  },
+  notificationItem: {
+    fontSize: 13,
+    color: '#555',
+    marginBottom: 4,
+    },
 });
-
-export default HomeScreen; 
+ 
+export default HomeScreen;
