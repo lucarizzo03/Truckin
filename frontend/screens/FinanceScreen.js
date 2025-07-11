@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,80 +10,27 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const FinanceScreen = ({ navigation }) => {
+const FinanceScreen = ({ navigation, currentLoad }) => {
   const [financials, setFinancials] = useState({
-    totalEarnings: 12800,
-    totalExpenses: 3200,
-    netIncome: 9600,
-    pendingPayments: 2800,
+    totalEarnings: (currentLoad?.pay || 0),
+    totalExpenses: 0,
+    netIncome: (currentLoad?.pay || 0) ,
+    pendingPayments: 0,
   });
 
-  const [expenses, setExpenses] = useState([
-    {
-      id: 1,
-      type: 'fuel',
-      amount: 450,
-      location: 'Springfield, IL',
-      date: 'Today',
-      time: '10:30 AM',
-      category: 'Fuel',
-    },
-    {
-      id: 2,
-      type: 'maintenance',
-      amount: 180,
-      location: 'St. Louis, MO',
-      date: 'Yesterday',
-      time: '2:15 PM',
-      category: 'Maintenance',
-    },
-    {
-      id: 3,
-      type: 'meals',
-      amount: 25,
-      location: 'Little Rock, AR',
-      date: 'Yesterday',
-      time: '6:45 PM',
-      category: 'Meals',
-    },
-    {
-      id: 4,
-      type: 'tolls',
-      amount: 45,
-      location: 'I-90 Toll Road',
-      date: '2 days ago',
-      time: '11:20 AM',
-      category: 'Tolls',
-    },
-  ]);
+  const [expenses, setExpenses] = useState([]);
+  const [invoices, setInvoices] = useState([]);
 
-  const [invoices, setInvoices] = useState([
-    {
-      id: 'INV001',
-      loadId: 'L001',
-      amount: 2800,
-      status: 'paid',
-      date: '2024-01-15',
-      broker: 'ABC Logistics',
-    },
-    {
-      id: 'INV002',
-      loadId: 'L002',
-      amount: 2100,
-      status: 'pending',
-      date: '2024-01-20',
-      broker: 'XYZ Transport',
-    },
-    {
-      id: 'INV003',
-      loadId: 'L003',
-      amount: 1800,
-      status: 'pending',
-      date: '2024-01-22',
-      broker: 'West Coast Freight',
-    },
-  ]);
+  useEffect(() => {
+    setFinancials(prev => ({
+      ...prev, 
+      totalEarnings: currentLoad?.pay || 0,
+      netIncome: (currentLoad?.pay || 0) - prev.totalExpenses
+    }))
+  }, [currentLoad]);
 
+
+  
   const expenseCategories = [
     { key: 'fuel', label: 'Fuel', icon: 'water', color: '#FF9500' },
     { key: 'maintenance', label: 'Maintenance', icon: 'construct', color: '#007AFF' },

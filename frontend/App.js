@@ -73,7 +73,16 @@ function TabNavigator({ currentLoad, setCurrentLoad }) {
 
 
 
-      <Tab.Screen name="Finance" component={FinanceScreen} />
+      <Tab.Screen name="Finance"
+        children={props => (
+          <FinanceScreen {...props} currentLoad={currentLoad}/>
+        )}
+      />
+      
+      
+      
+      
+      
       <Tab.Screen name="Chat"
         children={props => (
           <ChatScreen {...props} setCurrentLoad={setCurrentLoad} />

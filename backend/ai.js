@@ -25,9 +25,6 @@ async function transcribeVoice(audioFilePath) {
     }
 }
 
-const cityRegex = /loads? to ([a-zA-Z\s]+)[?.!]?/i;
-const acceptLoadRegex = /accept (?:the )?load ([a-zA-Z0-9]+)/i;
-
 
 function formatLoadsForPrompt(loads) {
     return loads.map(load =>

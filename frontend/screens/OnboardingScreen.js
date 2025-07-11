@@ -69,10 +69,12 @@ const OnboardingScreen = ({ onComplete }) => {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         onMomentumScrollEnd={(event) => {
           const slideIndex = Math.round(event.nativeEvent.contentOffset.x / width);
           setCurrentSlide(slideIndex);
         }}
+        contentContainerStyle={{ flexGrow: 1 }}
       >
         {slides.map((slide, index) => (
           <View key={index} style={styles.slide}>
@@ -124,10 +126,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+    justifyContent: 'flex-start',
   },
   slide: {
     width,
-    height,
+    height: height * 0.75,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 40,
@@ -162,12 +165,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     paddingHorizontal: 20,
     paddingBottom: 40,
+    backgroundColor: '#f8f9fa',
   },
   pagination: {
     flexDirection: 'row',
@@ -214,4 +214,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default OnboardingScreen; 
+export default OnboardingScreen;

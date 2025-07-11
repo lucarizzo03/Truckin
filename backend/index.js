@@ -148,7 +148,7 @@ app.get('/api/loads', async (req, res) => {
                 urgent: true,
             },
             
-            // Other routes for variety
+            
             {
                 id: 'L011',
                 pickup: 'Chicago, IL',
