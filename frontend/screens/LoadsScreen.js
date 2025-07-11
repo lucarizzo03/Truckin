@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native';
 
 const LoadsScreen = ({ navigation, setCurrentLoad , route}) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -67,8 +68,6 @@ const LoadsScreen = ({ navigation, setCurrentLoad , route}) => {
   
   const [loads, setLoads] = useState([]);
 
-
-  
   const filters = [
     { key: 'all', label: 'All Loads' },
     { key: 'high-pay', label: 'High Pay' },
@@ -92,9 +91,16 @@ const LoadsScreen = ({ navigation, setCurrentLoad , route}) => {
   });
 
   const handleLoadPress = (load) => {
+    const payPerMile = getPayPerMile(load);
     Alert.alert(
       'Load Details',
-      `${load.pickup} → ${load.delivery}\nPay: $${load.pay.toLocaleString()}\nDistance: ${load.distance}\nPickup: ${load.pickupTime}\nEquipment: ${load.equipment}\nBroker: ${load.broker}`,
+      `${load.pickup} → ${load.delivery}
+        Pay: $${load.pay.toLocaleString()}
+        Distance: ${load.distance}
+        Pickup: ${load.pickupTime}
+        Equipment: ${load.equipment}
+        Broker: ${load.broker}
+        $${payPerMile} per mile`,
       [
         { text: 'Decline', style: 'cancel' },
         { text: 'Accept', onPress: () => handleAcceptLoad(load) },
@@ -108,6 +114,12 @@ const LoadsScreen = ({ navigation, setCurrentLoad , route}) => {
     setCurrentLoad(load)
     setLoads(prevLoads => prevLoads.filter(l => l.id !== load.id)); // Remove from available loads
   };
+
+  function getPayPerMile(load) {
+    const miles = parseFloat(load.distance.replace(/[^\d.]/g, ''));
+    if (!miles || miles === 0) return null;
+    return (load.pay / miles).toFixed(2);
+  }
 
   const renderLoadItem = ({ item }) => (
     <TouchableOpacity style={styles.loadCard} onPress={() => handleLoadPress(item)}>
@@ -149,28 +161,32 @@ const LoadsScreen = ({ navigation, setCurrentLoad , route}) => {
             <Ionicons name="business" size={14} color="#666" />
             <Text style={styles.infoText}>{item.broker}</Text>
           </View>
+
+         <View style={styles.infoItem}>
+            <Ionicons name="trending-up" size={14} color="#007AFF" />
+            <View style={styles.payPerMileBadge}>
+              <Text style={styles.payPerMileText}>
+                ${getPayPerMile(item)} /mi
+              </Text>
+            </View>
+          </View>
+
         </View>
       </View>
 
       <View style={styles.loadActions}>
         <TouchableOpacity 
-          style={[styles.actionButton, styles.declineButton]}
-          onPress={() => Alert.alert('Load Declined', `Declined load ${item.id}`)}
-        >
-          <Text style={styles.declineText}>Decline</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.acceptButton]}
-          onPress={() => handleAcceptLoad(item)}
-        >
-          <Text style={styles.acceptText}>Accept</Text>
+              style={[styles.actionButton, styles.acceptButton]}
+              onPress={() => handleAcceptLoad(item)}
+            >
+            <Text style={styles.acceptText}>Accept</Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Available Loads</Text>
@@ -226,98 +242,104 @@ const LoadsScreen = ({ navigation, setCurrentLoad , route}) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.loadsList}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#f6f8fa',
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 16,
+    paddingTop: 10,
+    paddingBottom: 8,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#222',
   },
   filterButton: {
-    padding: 8,
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: '#f0f6ff',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: '#fff',
     marginHorizontal: 20,
-    marginBottom: 16,
+    marginTop: 12,
     borderRadius: 12,
-    paddingHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    shadowColor: '#007AFF',
+    shadowOpacity: 0.04,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 2,
   },
   searchIcon: {
-    marginRight: 12,
+    marginRight: 8,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    paddingVertical: 16,
+    color: '#222',
+    paddingVertical: 6,
   },
   filtersContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 16,
+    marginTop: 10,
+    marginBottom: 8,
+    paddingLeft: 20,
   },
   filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: 'white',
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    marginRight: 10,
   },
   filterChipActive: {
     backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
   },
   filterChipText: {
+    color: '#222',
+    fontWeight: '600',
     fontSize: 14,
-    color: '#666',
   },
   filterChipTextActive: {
-    color: 'white',
-    fontWeight: '600',
+    color: '#fff',
   },
   loadsList: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: 16,
+    paddingBottom: 30,
   },
   loadCard: {
-    backgroundColor: 'white',
-    borderRadius: 16,
+    backgroundColor: '#fff',
+    borderRadius: 18,
     padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    marginBottom: 18,
+    shadowColor: '#007AFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
     elevation: 4,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
   loadHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 16,
+    marginBottom: 14,
   },
   routeInfo: {
     flex: 1,
@@ -328,73 +350,103 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   locationText: {
-    fontSize: 16,
+    fontSize: 18,
     marginLeft: 8,
-    color: '#1a1a1a',
-    fontWeight: '500',
+    color: '#222',
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
   routeLine: {
     width: 2,
-    height: 16,
-    backgroundColor: '#ddd',
+    height: 18,
+    backgroundColor: '#e0e0e0',
     marginLeft: 7,
     marginVertical: 4,
+    borderRadius: 1,
   },
   urgentBadge: {
-    backgroundColor: '#FF3B30',
-    paddingHorizontal: 8,
+    backgroundColor: '#fff0f0',
+    borderColor: '#FF3B30',
+    borderWidth: 1,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 8,
+    borderRadius: 10,
+    alignSelf: 'flex-start',
   },
   urgentText: {
-    color: 'white',
-    fontSize: 10,
+    color: '#FF3B30',
+    fontSize: 11,
     fontWeight: 'bold',
+    letterSpacing: 0.5,
   },
   loadDetails: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   payAmount: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
     color: '#34C759',
+    letterSpacing: 0.5,
   },
   distanceText: {
     fontSize: 16,
-    color: '#666',
+    color: '#007AFF',
+    fontWeight: '600',
+    backgroundColor: '#f0f6ff',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 8,
   },
   loadInfo: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 2,
   },
   infoItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginRight: 14,
+    marginBottom: 4,
   },
   infoText: {
     fontSize: 14,
-    color: '#666',
+    color: '#444',
     marginLeft: 4,
+    fontWeight: '500',
+  },
+  payPerMileBadge: {
+    backgroundColor: '#e6f7ff',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginLeft: 4,
+  },
+  payPerMileText: {
+    color: '#007AFF',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
   loadActions: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 14,
+    marginTop: 10,
   },
   actionButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: 13,
+    borderRadius: 10,
     alignItems: 'center',
   },
   declineButton: {
     backgroundColor: 'transparent',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#FF3B30',
   },
   acceptButton: {
@@ -402,12 +454,12 @@ const styles = StyleSheet.create({
   },
   declineText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#FF3B30',
   },
   acceptText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: 'white',
   },
 });
