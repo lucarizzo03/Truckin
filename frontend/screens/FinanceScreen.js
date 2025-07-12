@@ -10,25 +10,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const FinanceScreen = ({ navigation, currentLoad }) => {
-  const [financials, setFinancials] = useState({
-    totalEarnings: (currentLoad?.pay || 0),
-    totalExpenses: 0,
-    netIncome: (currentLoad?.pay || 0) ,
-    pendingPayments: 0,
-  });
-
+const FinanceScreen = ({ navigation, completedLoads = []}) => {
   const [expenses, setExpenses] = useState([]);
   const [invoices, setInvoices] = useState([]);
 
-  useEffect(() => {
-    setFinancials(prev => ({
-      ...prev, 
-      totalEarnings: currentLoad?.pay || 0,
-      netIncome: (currentLoad?.pay || 0) - prev.totalExpenses
-    }))
-  }, [currentLoad]);
-
+  const totalEarnings = completedLoads.reduce((sum, load) => sum + (load.pay || 0), 0);
+  const totalExpenses = expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
+  const netIncome = totalEarnings - totalExpenses;
+  const pendingPayments = 0; // Or calculate if you have logic for this
 
   
   const expenseCategories = [
@@ -60,11 +49,6 @@ const FinanceScreen = ({ navigation, currentLoad }) => {
                 category: category.label,
               };
               setExpenses([newExpense, ...expenses]);
-              setFinancials(prev => ({
-                ...prev,
-                totalExpenses: prev.totalExpenses + parseFloat(amount),
-                netIncome: prev.netIncome - parseFloat(amount),
-              }));
             }
           },
         },
@@ -152,19 +136,19 @@ const FinanceScreen = ({ navigation, currentLoad }) => {
           <View style={styles.summaryGrid}>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Total Earnings</Text>
-              <Text style={styles.summaryValue}>${financials.totalEarnings.toLocaleString()}</Text>
+              <Text style={styles.summaryValue}>${totalEarnings.toLocaleString()}</Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Total Expenses</Text>
-              <Text style={[styles.summaryValue, { color: '#FF3B30' }]}>-${financials.totalExpenses.toLocaleString()}</Text>
+              <Text style={[styles.summaryValue, { color: '#FF3B30' }]}>-${totalExpenses.toLocaleString()}</Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Net Income</Text>
-              <Text style={[styles.summaryValue, { color: '#34C759' }]}>${financials.netIncome.toLocaleString()}</Text>
+              <Text style={[styles.summaryValue, { color: '#34C759' }]}>${netIncome.toLocaleString()}</Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Pending</Text>
-              <Text style={styles.summaryValue}>${financials.pendingPayments.toLocaleString()}</Text>
+              <Text style={styles.summaryValue}>${pendingPayments.toLocaleString()}</Text>
             </View>
           </View>
         </View>

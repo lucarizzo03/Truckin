@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import React from 'react';
+import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -19,7 +19,7 @@ import OnboardingScreen from './screens/OnboardingScreen';
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-function TabNavigator({ currentLoad, setCurrentLoad }) {
+function TabNavigator({ currentLoad, setCurrentLoad, completedLoads, addCompletedLoad }) {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -48,14 +48,20 @@ function TabNavigator({ currentLoad, setCurrentLoad }) {
 
       <Tab.Screen name="Home"
         children={props => (
-          <HomeScreen {...props} currentLoad={currentLoad} setCurrentLoad={setCurrentLoad} />
+          <HomeScreen 
+          {...props} 
+          currentLoad={currentLoad} 
+          setCurrentLoad={setCurrentLoad} />
         )}
       />
 
 
       <Tab.Screen name="Loads"
         children={props => (
-          <LoadsScreen {...props} setCurrentLoad={setCurrentLoad} />
+          <LoadsScreen 
+          {...props} 
+          setCurrentLoad={setCurrentLoad} 
+          addCompletedLoad={addCompletedLoad}/>
         )}
       />
 
@@ -75,7 +81,10 @@ function TabNavigator({ currentLoad, setCurrentLoad }) {
 
       <Tab.Screen name="Finance"
         children={props => (
-          <FinanceScreen {...props} currentLoad={currentLoad}/>
+          <FinanceScreen 
+          {...props} 
+          currentLoad={currentLoad} 
+          completedLoads={completedLoads}/>
         )}
       />
       
@@ -96,6 +105,8 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = React.useState(false);
   const [currentLoad, setCurrentLoad] = React.useState(null)
+  const [completedLoads, setCompletedLoads] = useState([]);
+  const addCompletedLoad = (load) => setCompletedLoads(prev => [...prev, load]);
 
   return (
     <View style={styles.container}>
@@ -131,6 +142,8 @@ export default function App() {
                   {...props}
                   currentLoad={currentLoad}
                   setCurrentLoad={setCurrentLoad}
+                  completedLoads={completedLoads}
+                  addCompletedLoad={addCompletedLoad}
                 />
               )}
             />

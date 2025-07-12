@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native';
 
-const LoadsScreen = ({ navigation, setCurrentLoad , route}) => {
+const LoadsScreen = ({ navigation, setCurrentLoad , route, addCompletedLoad}) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
 
@@ -111,6 +111,7 @@ const LoadsScreen = ({ navigation, setCurrentLoad , route}) => {
   const handleAcceptLoad = (load) => {
     Alert.alert('Load Accepted', `You've accepted load ${load.id}`);
     // Remove from available loads
+    addCompletedLoad(load)
     setCurrentLoad(load)
     setLoads(prevLoads => prevLoads.filter(l => l.id !== load.id)); // Remove from available loads
   };
