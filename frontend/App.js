@@ -19,7 +19,7 @@ import OnboardingScreen from './screens/OnboardingScreen';
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-function TabNavigator({ currentLoad, setCurrentLoad, completedLoads, addCompletedLoad }) {
+function TabNavigator({ currentLoad, setCurrentLoad, completedLoads, addCompletedLoad, invoices, addInvoice, markInvoicePaid }) {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -51,7 +51,9 @@ function TabNavigator({ currentLoad, setCurrentLoad, completedLoads, addComplete
           <HomeScreen 
           {...props} 
           currentLoad={currentLoad} 
-          setCurrentLoad={setCurrentLoad} />
+          setCurrentLoad={setCurrentLoad} 
+          addInvoice={addInvoice}
+          />
         )}
       />
 
@@ -61,7 +63,8 @@ function TabNavigator({ currentLoad, setCurrentLoad, completedLoads, addComplete
           <LoadsScreen 
           {...props} 
           setCurrentLoad={setCurrentLoad} 
-          addCompletedLoad={addCompletedLoad}/>
+          addCompletedLoad={addCompletedLoad}
+          />
         )}
       />
 
@@ -84,7 +87,10 @@ function TabNavigator({ currentLoad, setCurrentLoad, completedLoads, addComplete
           <FinanceScreen 
           {...props} 
           currentLoad={currentLoad} 
-          completedLoads={completedLoads}/>
+          completedLoads={completedLoads}
+          invoices={invoices}
+          markInvoicePaid={markInvoicePaid}
+          />
         )}
       />
       
@@ -102,11 +108,21 @@ function TabNavigator({ currentLoad, setCurrentLoad, completedLoads, addComplete
 }
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
-  const [hasCompletedOnboarding, setHasCompletedOnboarding] = React.useState(false);
-  const [currentLoad, setCurrentLoad] = React.useState(null)
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [currentLoad, setCurrentLoad] = useState(null)
   const [completedLoads, setCompletedLoads] = useState([]);
   const addCompletedLoad = (load) => setCompletedLoads(prev => [...prev, load]);
+  const [invoices, setInvoices] = useState([])
+  const addInvoice = (invoice) => setInvoices(prev => [invoice, ...prev]);
+  const markInvoicePaid = (invoiceId) => {
+    setInvoices(prev =>
+      prev.map(inv =>
+        inv.id === invoiceId ? { ...inv, status: 'paid' } : inv
+      )
+    );
+  };
+
 
   return (
     <View style={styles.container}>
@@ -144,6 +160,9 @@ export default function App() {
                   setCurrentLoad={setCurrentLoad}
                   completedLoads={completedLoads}
                   addCompletedLoad={addCompletedLoad}
+                  invoices={invoices}
+                  addInvoice={addInvoice}
+                  markInvoicePaid={markInvoicePaid}
                 />
               )}
             />

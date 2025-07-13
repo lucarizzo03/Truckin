@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 
-const HomeScreen = ({ navigation, currentLoad, setCurrentLoad }) => {
+const HomeScreen = ({ navigation, currentLoad, setCurrentLoad, invoices, addInvoice }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recording, setRecording] = useState(null);
 
@@ -49,25 +49,26 @@ const HomeScreen = ({ navigation, currentLoad, setCurrentLoad }) => {
   };
 
   const handleEndLoad = () => {
-    if (!setCurrentLoad || typeof setCurrentLoad !== 'function') {
-      Alert.alert('Error', 'Unable to end trip. Please try again.');
-      return;
-    }
-    
     Alert.alert(
       'End Trip',
-      'Are you sure you want to end this trip? This action cannot be undone.',
+      'Are you sure you want to end this trip?',
       [
         { text: 'Cancel', style: 'cancel' },
         { 
           text: 'End Trip', 
           style: 'destructive', 
           onPress: () => {
+            if (currentLoad && addInvoice) {
+              addInvoice({
+                id: Date.now().toString(),
+                loadId: currentLoad.id,
+                amount: currentLoad.pay,
+                status: 'pending',
+                date: new Date().toLocaleDateString(),
+                broker: currentLoad.broker,
+              });
+            }
             setCurrentLoad(null);
-            // You could add additional logic here like:
-            // - Saving trip data to history
-            // - Sending data to backend
-            // - Showing completion message
           }
         },
       ]

@@ -10,16 +10,23 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const FinanceScreen = ({ navigation, completedLoads = []}) => {
+const FinanceScreen = ({ navigation, completedLoads = [], invoices = []}) => {
   const [expenses, setExpenses] = useState([]);
-  const [invoices, setInvoices] = useState([]);
 
-  const totalEarnings = completedLoads.reduce((sum, load) => sum + (load.pay || 0), 0);
   const totalExpenses = expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
-  const netIncome = totalEarnings - totalExpenses;
-  const pendingPayments = 0; // Or calculate if you have logic for this
 
-  
+  const totalEarnings = invoices
+  .filter(inv => inv.status === 'paid')
+  .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+
+  const pendingPayments = invoices
+    .filter(inv => inv.status !== 'paid')
+    .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+
+  const netIncome = totalEarnings - totalExpenses;
+
+
+
   const expenseCategories = [
     { key: 'fuel', label: 'Fuel', icon: 'water', color: '#FF9500' },
     { key: 'maintenance', label: 'Maintenance', icon: 'construct', color: '#007AFF' },
@@ -122,6 +129,7 @@ const FinanceScreen = ({ navigation, completedLoads = []}) => {
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
+        
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Finances</Text>
