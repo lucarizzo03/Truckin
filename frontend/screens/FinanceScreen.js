@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 const FinanceScreen = ({ navigation, completedLoads = [], invoices = [], markInvoicePaid }) => {
   const [expenses, setExpenses] = useState([]);
+  const [filter, setFilter] = useState('all')
 
   const totalExpenses = expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
 
@@ -25,8 +26,6 @@ const FinanceScreen = ({ navigation, completedLoads = [], invoices = [], markInv
 
   const netIncome = totalEarnings - totalExpenses;
 
-
-
   const expenseCategories = [
     { key: 'fuel', label: 'Fuel', icon: 'water', color: '#FF9500' },
     { key: 'maintenance', label: 'Maintenance', icon: 'construct', color: '#007AFF' },
@@ -35,6 +34,27 @@ const FinanceScreen = ({ navigation, completedLoads = [], invoices = [], markInv
     { key: 'lodging', label: 'Lodging', icon: 'bed', color: '#FF3B30' },
     { key: 'other', label: 'Other', icon: 'ellipsis-horizontal', color: '#666' },
   ];
+
+  // Helper to check if a date is in the current filter
+  const isInFilter = (date) => {
+    const now = new Date();
+    const d = new Date(date);
+    if (filter === 'week') {
+      const weekAgo = new Date(now);
+      weekAgo.setDate(now.getDate() - 7);
+      return d >= weekAgo;
+    }
+    if (filter === 'month') {
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }
+    if (filter === 'year') {
+      return d.getFullYear() === now.getFullYear();
+    }
+    return true;
+  };
+
+  const filteredInvoices = invoices.filter(inv => isInFilter(inv.date));
+  const filteredExpenses = expenses.filter(exp => isInFilter(exp.date));  
 
   const handleAddExpense = (category) => {
     Alert.prompt(
@@ -149,6 +169,26 @@ const FinanceScreen = ({ navigation, completedLoads = [], invoices = [], markInv
           </TouchableOpacity>
         </View>
 
+        {/* Filter Toggle */}
+        <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 12 }}>
+          {['week', 'month', 'year', 'all'].map(period => (
+            <TouchableOpacity
+              key={period}
+              style={{
+                padding: 8,
+                marginHorizontal: 4,
+                backgroundColor: filter === period ? '#007AFF' : '#f0f0f0',
+                borderRadius: 8,
+              }}
+              onPress={() => setFilter(period)}
+            >
+              <Text style={{ color: filter === period ? 'white' : '#007AFF', fontWeight: 'bold' }}>
+                {period.charAt(0).toUpperCase() + period.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         {/* Financial Summary */}
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Financial Summary</Text>
@@ -204,22 +244,29 @@ const FinanceScreen = ({ navigation, completedLoads = [], invoices = [], markInv
             scrollEnabled={false}
           />
         </View>
-
+          
         {/* Invoices */}
         <View style={styles.invoicesCard}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Invoices</Text>
-            <TouchableOpacity>
-              <Text style={styles.viewAllText}>View All</Text>
-            </TouchableOpacity>
-          </View>
           <FlatList
-            data={invoices}
+            data={filteredInvoices}
             keyExtractor={(item) => item.id}
             renderItem={renderInvoiceItem}
             scrollEnabled={false}
           />
         </View>
+
+
+
+
+
+
+
+
+
+
+
+
+
       </ScrollView>
     </View>
   );
