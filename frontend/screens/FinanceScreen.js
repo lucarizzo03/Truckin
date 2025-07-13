@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const FinanceScreen = ({ navigation, completedLoads = [], invoices = []}) => {
+const FinanceScreen = ({ navigation, completedLoads = [], invoices = [], markInvoicePaid }) => {
   const [expenses, setExpenses] = useState([]);
 
   const totalExpenses = expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
@@ -107,6 +107,18 @@ const FinanceScreen = ({ navigation, completedLoads = [], invoices = []}) => {
     <TouchableOpacity 
       style={styles.invoiceItem} 
       onPress={() => handleInvoicePress(item)}
+      onLongPress={() => {
+        if (item.status !== 'paid') {
+          Alert.alert(
+            'Mark as Paid',
+            'Mark this invoice as paid?',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Mark Paid', onPress: () => markInvoicePaid(item.id) }
+            ]
+          );
+        }
+      }}
     >
       <View style={styles.invoiceHeader}>
         <Text style={styles.invoiceId}>{item.id}</Text>
@@ -117,7 +129,6 @@ const FinanceScreen = ({ navigation, completedLoads = [], invoices = []}) => {
           <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
         </View>
       </View>
-      
       <View style={styles.invoiceDetails}>
         <Text style={styles.invoiceAmount}>${item.amount.toLocaleString()}</Text>
         <Text style={styles.invoiceBroker}>{item.broker}</Text>
