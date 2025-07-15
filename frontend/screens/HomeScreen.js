@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 
-const HomeScreen = ({ navigation, currentLoad, setCurrentLoad, invoices, addInvoice }) => {
+const HomeScreen = ({ navigation, currentLoad, setCurrentLoad, invoices, addInvoice, expenses = [] }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recording, setRecording] = useState(null);
 
@@ -64,7 +64,7 @@ const HomeScreen = ({ navigation, currentLoad, setCurrentLoad, invoices, addInvo
                 loadId: currentLoad.id,
                 amount: currentLoad.pay,
                 status: 'pending',
-                date: new Date().toLocaleDateString(),
+                date: new Date().toISOString(),
                 broker: currentLoad.broker,
               });
             }
@@ -74,6 +74,28 @@ const HomeScreen = ({ navigation, currentLoad, setCurrentLoad, invoices, addInvo
       ]
     );
   };
+
+  // Helper to check if a date is in this week
+  const isThisWeek = (dateString) => {
+    const now = new Date();
+    const d = new Date(dateString);
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday
+    startOfWeek.setHours(0,0,0,0);
+    return d >= startOfWeek && d <= now;
+  };
+  
+  // Filter paid invoices and expenses for this week
+  const weeklyPaidInvoices = (invoices || []).filter(inv => inv.status === 'paid' && isThisWeek(inv.date));
+  const weeklyExpenses = (expenses || []).filter(exp => isThisWeek(exp.date));
+
+  
+ // Calculate totals
+  const weeklyIncome = weeklyPaidInvoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+  const weeklyExpensesTotal = weeklyExpenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
+  const weeklyNetIncome = weeklyIncome - weeklyExpensesTotal;
+
+  
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -159,24 +181,43 @@ const HomeScreen = ({ navigation, currentLoad, setCurrentLoad, invoices, addInvo
         </Text>
       </TouchableOpacity>
 
-      {/* Quick Actions */}
-      <View style={styles.quickActions}>
-        <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={() => navigation.navigate('Loads')}
-        >
-          <Ionicons name="list" size={24} color="#007AFF" />
-          <Text style={styles.actionText}>Find Loads</Text>
-        </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={() => navigation.navigate('Route')}
-        >
-          <Ionicons name="map" size={24} color="#007AFF" />
-          <Text style={styles.actionText}>Route</Text>
-        </TouchableOpacity>
+
+      {/* Financial Summary */}
+      <View style={styles.financeSummaryTile}>
+        <Ionicons name="bar-chart" size={32} color="#007AFF" style={{ marginBottom: 10 }} />
+        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#222', marginBottom: 4, textAlign: 'center' }}>
+          Income this week
+        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', marginBottom: 2 }}>
+          <Text style={{
+            fontSize: 36,
+            fontWeight: 'bold',
+            color: '#34C759',
+            textAlign: 'center',
+            marginTop: 18,
+            lineHeight: 40,
+          }}>
+            ${weeklyIncome.toLocaleString()}
+          </Text>
+          <Text style={{
+            color: '#888',
+            fontWeight: 'normal',
+            fontSize: 18,
+            marginLeft: 6,
+            marginBottom: 4,
+          }}>
+          </Text>
+        </View>
+        <Text style={{ color: '#888', fontSize: 14, marginTop: 6, textAlign: 'center' }}>
+        </Text>
+        <Text style={{ color: '#007AFF', fontSize: 14, fontWeight: '600', marginTop: 8, textAlign: 'center' }}>
+        </Text>
       </View>
+          
+      
+
+
 
       {/* Notifications Section */}
       <View style={styles.notificationsSection}>
@@ -432,6 +473,19 @@ const styles = StyleSheet.create({
     color: '#555',
     marginBottom: 4,
     },
+    financeSummaryTile: {
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    paddingVertical: 28,
+    paddingHorizontal: 24,
+    marginBottom: 28,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.10,
+    shadowRadius: 10,
+    elevation: 6,
+  },
 });
  
 export default HomeScreen;

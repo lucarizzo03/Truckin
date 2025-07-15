@@ -10,8 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const FinanceScreen = ({ navigation, completedLoads = [], invoices = [], markInvoicePaid }) => {
-  const [expenses, setExpenses] = useState([]);
+const FinanceScreen = ({ navigation, completedLoads = [], invoices = [], markInvoicePaid, expenses = [], setExpenses }) => {
   const [filter, setFilter] = useState('all')
 
   const totalExpenses = expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
@@ -53,8 +52,7 @@ const FinanceScreen = ({ navigation, completedLoads = [], invoices = [], markInv
     return true;
   };
 
-  const filteredInvoices = invoices.filter(inv => isInFilter(inv.date));
-  const filteredExpenses = expenses.filter(exp => isInFilter(exp.date));  
+  const filteredInvoices = invoices.filter(inv => isInFilter(inv.date)); 
 
   const handleAddExpense = (category) => {
     Alert.prompt(
@@ -115,7 +113,7 @@ const FinanceScreen = ({ navigation, completedLoads = [], invoices = [], markInv
       <View style={styles.expenseContent}>
         <View style={styles.expenseHeader}>
           <Text style={styles.expenseCategory}>{item.category}</Text>
-          <Text style={styles.expenseAmount}>-${item.amount.toLocaleString()}</Text>
+          <Text style={styles.expenseAmount}>-${(item.amount || 0).toLocaleString()}</Text>
         </View>
         <Text style={styles.expenseLocation}>{item.location}</Text>
         <Text style={styles.expenseTime}>{item.date} at {item.time}</Text>
@@ -150,7 +148,7 @@ const FinanceScreen = ({ navigation, completedLoads = [], invoices = [], markInv
         </View>
       </View>
       <View style={styles.invoiceDetails}>
-        <Text style={styles.invoiceAmount}>${item.amount.toLocaleString()}</Text>
+       <Text style={styles.invoiceAmount}>${(item.amount || 0).toLocaleString()}</Text>
         <Text style={styles.invoiceBroker}>{item.broker}</Text>
         <Text style={styles.invoiceDate}>{item.date}</Text>
       </View>
@@ -195,19 +193,19 @@ const FinanceScreen = ({ navigation, completedLoads = [], invoices = [], markInv
           <View style={styles.summaryGrid}>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Total Earnings</Text>
-              <Text style={styles.summaryValue}>${totalEarnings.toLocaleString()}</Text>
+             <Text style={styles.summaryValue}>${(totalEarnings || 0).toLocaleString()}</Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Total Expenses</Text>
-              <Text style={[styles.summaryValue, { color: '#FF3B30' }]}>-${totalExpenses.toLocaleString()}</Text>
+             <Text style={[styles.summaryValue, { color: '#FF3B30' }]}>-${(totalExpenses || 0).toLocaleString()}</Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Net Income</Text>
-              <Text style={[styles.summaryValue, { color: '#34C759' }]}>${netIncome.toLocaleString()}</Text>
+              <Text style={[styles.summaryValue, { color: '#34C759' }]}>${(netIncome || 0).toLocaleString()}</Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Pending</Text>
-              <Text style={styles.summaryValue}>${pendingPayments.toLocaleString()}</Text>
+              <Text style={styles.summaryValue}>${(pendingPayments || 0).toLocaleString()}</Text>
             </View>
           </View>
         </View>

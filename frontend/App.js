@@ -19,7 +19,7 @@ import OnboardingScreen from './screens/OnboardingScreen';
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-function TabNavigator({ currentLoad, setCurrentLoad, completedLoads, addCompletedLoad, invoices, addInvoice, markInvoicePaid }) {
+function TabNavigator({ currentLoad, setCurrentLoad, completedLoads, addCompletedLoad, invoices, addInvoice, markInvoicePaid, expenses, setExpenses }) {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -53,6 +53,10 @@ function TabNavigator({ currentLoad, setCurrentLoad, completedLoads, addComplete
           currentLoad={currentLoad} 
           setCurrentLoad={setCurrentLoad} 
           addInvoice={addInvoice}
+          expenses={expenses}
+          setExpenses={setExpenses}
+          invoices={invoices}
+          markInvoicePaid={markInvoicePaid}
           />
         )}
       />
@@ -90,6 +94,8 @@ function TabNavigator({ currentLoad, setCurrentLoad, completedLoads, addComplete
           completedLoads={completedLoads}
           invoices={invoices}
           markInvoicePaid={markInvoicePaid}
+          expenses={expenses}
+          setExpenses={setExpenses}
           />
         )}
       />
@@ -122,6 +128,7 @@ export default function App() {
       )
     );
   };
+  const [expenses, setExpenses] = useState([]);
 
 
   return (
@@ -163,6 +170,8 @@ export default function App() {
                   invoices={invoices}
                   addInvoice={addInvoice}
                   markInvoicePaid={markInvoicePaid}
+                  expenses={expenses}
+                  setExpenses={setExpenses}
                 />
               )}
             />
