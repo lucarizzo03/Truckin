@@ -198,7 +198,7 @@ const HomeScreen = ({ navigation, currentLoad, setCurrentLoad, invoices, addInvo
             marginTop: 18,
             lineHeight: 40,
           }}>
-            ${weeklyIncome.toLocaleString()}
+            ${weeklyNetIncome.toLocaleString()}
           </Text>
           <Text style={{
             color: '#888',

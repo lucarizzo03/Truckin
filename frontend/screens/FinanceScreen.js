@@ -69,8 +69,8 @@ const FinanceScreen = ({ navigation, completedLoads = [], invoices = [], markInv
                 type: category.key,
                 amount: parseFloat(amount),
                 location: 'Current Location',
-                date: 'Today',
-                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                date: new Date().toISOString(),
+                time: new Date().toISOString(),
                 category: category.label,
               };
               setExpenses([newExpense, ...expenses]);
