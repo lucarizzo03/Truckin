@@ -28,8 +28,8 @@ function TabNavigator({ currentLoad, setCurrentLoad, completedLoads, addComplete
 
           if (route.name === 'Home') {
             iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'Loads') {
-            iconName = focused ? 'list' : 'list-outline';
+          } else if (route.name === 'Profile') {
+            iconName = focused ? 'person' : 'person-outline';
           } else if (route.name === 'Route') {
             iconName = focused ? 'map' : 'map-outline';
           } else if (route.name === 'Finance') {
@@ -62,31 +62,21 @@ function TabNavigator({ currentLoad, setCurrentLoad, completedLoads, addComplete
       />
 
 
-      <Tab.Screen name="Loads"
-        children={props => (
-          <LoadsScreen 
-          {...props} 
-          setCurrentLoad={setCurrentLoad} 
-          addCompletedLoad={addCompletedLoad}
-          />
-        )}
-      />
-
-
-      <Tab.Screen name="Route"
+       <Tab.Screen name="Route"
         children={props => (
           <RouteScreen {...props} currentLoad={currentLoad}/>
         )}
       />
 
 
+      <Tab.Screen name="Chat"
+        children={props => (
+          <ChatScreen {...props} setCurrentLoad={setCurrentLoad} />
+        )}
+      />
 
 
-
-
-
-
-      <Tab.Screen name="Finance"
+       <Tab.Screen name="Finance"
         children={props => (
           <FinanceScreen 
           {...props} 
@@ -99,16 +89,38 @@ function TabNavigator({ currentLoad, setCurrentLoad, completedLoads, addComplete
           />
         )}
       />
-      
-      
-      
-      
-      
-      <Tab.Screen name="Chat"
+
+
+      <Tab.Screen name="Profile"
         children={props => (
-          <ChatScreen {...props} setCurrentLoad={setCurrentLoad} />
+          <LoadsScreen 
+          {...props} 
+          setCurrentLoad={setCurrentLoad} 
+          addCompletedLoad={addCompletedLoad}
+          />
         )}
       />
+
+
+     
+
+
+
+
+
+
+
+
+     
+      
+      
+      
+      
+      
+      
+
+
+
     </Tab.Navigator>
   );
 }

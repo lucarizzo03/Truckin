@@ -139,10 +139,9 @@ const RouteScreen = ({ navigation, currentLoad }) => {
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <Ionicons name="map-outline" size={80} color="#ccc" style={{ marginBottom: 24 }} />
         <Text style={{ fontSize: 22, fontWeight: '600', color: '#444', marginBottom: 8 }}>
-          No active load
+          Lets Find a Load
         </Text>
         <Text style={{ fontSize: 16, color: '#888', textAlign: 'center', marginBottom: 24 }}>
-          Accept a load to view your route and stops here.
         </Text>
         <TouchableOpacity
           style={{
@@ -151,9 +150,9 @@ const RouteScreen = ({ navigation, currentLoad }) => {
             paddingVertical: 12,
             borderRadius: 8,
           }}
-          onPress={() => navigation.navigate('Loads')}
+          onPress={() => navigation.navigate('Chat')}
         >
-          <Text style={{ color: 'white', fontWeight: '600', fontSize: 16 }}>Browse Loads</Text>
+          <Text style={{ color: 'white', fontWeight: '600', fontSize: 16 }}>Ask AutoPilot</Text>
         </TouchableOpacity>
       </View>
     );
@@ -189,7 +188,7 @@ const RouteScreen = ({ navigation, currentLoad }) => {
       snapPoints={['30%', '60%']}
       >
     
-          {/* Route Summary */}
+        {/* Route Summary */}
         <View style={{ padding: 16 }}>
           <View style={styles.routeSummary}>
             <View style={styles.routeHeader}>
