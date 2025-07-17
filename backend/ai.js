@@ -286,42 +286,8 @@ async function handleVoiceToChat(audioFilePath, conversationHistory = [], curren
 }
 
 
-// Stream response for real-time chat experience
-async function streamChatResponse(userMessage, conversationHistory = []) {
-    try {
-        const messages = [
-            {
-                role: "system", 
-                content: `You are an AI assistant for AutoPilot, a trucking management app. 
-                Help with loads, routes, fuel, compliance, maintenance, and general trucking questions.
-                Be helpful, concise, and practical.`
-            },
-            ...conversationHistory,
-            {
-                role: "user",
-                content: userMessage
-            }
-        ];
-
-        const stream = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: messages,
-            temperature: 0.7,
-            max_tokens: 500,
-            stream: true
-        });
-
-        return stream;
-    } catch (error) {
-        console.error('Stream chat error:', error);
-        throw error;
-    }
-}
-
-
 module.exports = {
     transcribeVoice,
     generateChatResponse,
-    handleVoiceToChat,
-    streamChatResponse
+    handleVoiceToChat
 };
