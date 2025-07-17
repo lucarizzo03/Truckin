@@ -171,17 +171,15 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => {
 
   const handleLoadAcceptance = async (loadId) => {
     try {
-      const load = currentLoads.find(l => l.id === loadId);
+      const load = currentLoads.find(l => l.id === loadId || l.load_id === loadId);
       if (load) {
-        setCurrentLoad(load);
-        
-        // Remove from available loads
-        setCurrentLoads(prev => prev.filter(l => l.id !== loadId));
+        const l = load.metadata ? { ...load, ...load.metadata } : load;
+        setCurrentLoad(l);
         
         // Add confirmation message to chat
         const confirmationMessage = {
           id: Date.now(),
-          text: `✅ Load ${loadId} accepted successfully!\n\n📍 ${load.pickup} → ${load.delivery}\n💰 $${load.pay.toLocaleString()}\n📏 ${load.distance}\n⏰ ${load.pickupTime}`,
+          text: `✅ Load ${loadId} accepted successfully!\n\n📍 ${l.pickup} → ${l.delivery}\n💰 $${typeof l.pay === 'number' ? l.pay.toLocaleString() : l.pay ?? 'N/A'}\n📏 ${l.distance}\n⏰ ${l.pickupTime}`,
           isUser: false,
           timestamp: new Date()
         };
@@ -200,7 +198,8 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => {
           ]
         );
       }
-    } catch (error) {
+    } 
+    catch (error) {
       console.error('Load acceptance error:', error);
       Alert.alert('Error', 'Failed to accept load');
     }
@@ -266,12 +265,12 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => {
   // Add this function after handleLoadAcceptance
   const showLoadDetails = (loadIds) => {
     const loadDetails = loadIds.map(id => {
-      const load = currentLoads.find(l => l.id === id);
-      if (load) {
-        return `🚛 Load ${load.id}:\n📍 ${load.pickup} → ${load.delivery}\n💰 $${load.pay.toLocaleString()}\n📏 ${load.distance}\n⏰ ${load.pickupTime}\n🏢 ${load.broker}\n${load.urgent ? '🚨 URGENT' : ''}`;
-      }
-      return `Load ${id} not found`;
-    }).join('\n\n');
+    const load = currentLoads.find(l => l.id === id || l.load_id === id);
+    if (load) {
+      return `🚛 Load ${load.id}:\n📍 ${load.pickup} → ${load.delivery}\n💰 $${typeof load.pay === 'number' ? load.pay.toLocaleString() : (load.pay ?? 'N/A')}\n📏 ${load.distance}\n⏰ ${load.pickupTime}\n🏢 ${load.broker}\n${load.urgent ? '🚨 URGENT' : ''}`;
+    }
+    return `Load ${id} not found`;
+  }).join('\n\n');
 
     const detailsMessage = {
       id: Date.now(),

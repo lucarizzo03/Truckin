@@ -8,268 +8,26 @@ const { supabase } = require('./supabaseClient');
 const { 
     generateChatResponse, 
     handleVoiceToChat, 
-} = require('./ai');
+} = require('./ai')
+const { OpenAI } = require('openai');
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const app = express();
 
 app.use(cors())
-app.use(express.json());
+app.use(express.json({limit: '5mb'}));
 
 // Add endpoint to get current loads
 app.get('/api/loads', async (req, res) => {
     try {
-        // This would connect to your loads database
-        // For now, return the fake loads
-        const loads = [
-            // Routes TO Chicago (multiple options)
-            {
-                id: 'L001',
-                pickup: 'Minneapolis, MN',
-                delivery: 'Chicago, IL',
-                pay: 1300,
-                distance: '400 miles',
-                pickupTime: 'Today 2:00 PM',
-                loadType: 'Dry Van',
-                equipment: '53\' Dry Van',
-                broker: 'Twin Cities Freight',
-                urgent: true,
-            },
-            {
-                id: 'L002',
-                pickup: 'Detroit, MI',
-                delivery: 'Chicago, IL',
-                pay: 1800,
-                distance: '280 miles',
-                pickupTime: 'Today 4:30 PM',
-                loadType: 'Reefer',
-                equipment: '53\' Reefer',
-                broker: 'Great Lakes Logistics',
-                urgent: false,
-            },
-            {
-                id: 'L003',
-                pickup: 'Indianapolis, IN',
-                delivery: 'Chicago, IL',
-                pay: 950,
-                distance: '180 miles',
-                pickupTime: 'Tomorrow 8:00 AM',
-                loadType: 'Dry Van',
-                equipment: '53\' Dry Van',
-                broker: 'Midwest Connect',
-                urgent: true,
-            },
-            {
-                id: 'L004',
-                pickup: 'Milwaukee, WI',
-                delivery: 'Chicago, IL',
-                pay: 1100,
-                distance: '90 miles',
-                pickupTime: 'Today 6:00 PM',
-                loadType: 'Flatbed',
-                equipment: '48\' Flatbed',
-                broker: 'Wisconsin Hauling',
-                urgent: false,
-            },
-            {
-                id: 'L005',
-                pickup: 'St. Louis, MO',
-                delivery: 'Chicago, IL',
-                pay: 1400,
-                distance: '300 miles',
-                pickupTime: 'Tomorrow 10:00 AM',
-                loadType: 'Reefer',
-                equipment: '53\' Reefer',
-                broker: 'Gateway Freight',
-                urgent: true,
-            },
-            
-            // Routes TO Miami (multiple options)
-            {
-                id: 'L006',
-                pickup: 'Atlanta, GA',
-                delivery: 'Miami, FL',
-                pay: 2100,
-                distance: '665 miles',
-                pickupTime: 'Today 3:00 PM',
-                loadType: 'Reefer',
-                equipment: '53\' Reefer',
-                broker: 'XYZ Transport',
-                urgent: false,
-            },
-            {
-                id: 'L007',
-                pickup: 'Orlando, FL',
-                delivery: 'Miami, FL',
-                pay: 1200,
-                distance: '230 miles',
-                pickupTime: 'Today 5:30 PM',
-                loadType: 'Dry Van',
-                equipment: '53\' Dry Van',
-                broker: 'Sunshine Hauling',
-                urgent: true,
-            },
-            {
-                id: 'L008',
-                pickup: 'Tampa, FL',
-                delivery: 'Miami, FL',
-                pay: 950,
-                distance: '280 miles',
-                pickupTime: 'Tomorrow 9:00 AM',
-                loadType: 'Flatbed',
-                equipment: '48\' Flatbed',
-                broker: 'Gulf Coast Freight',
-                urgent: false,
-            },
-            {
-                id: 'L009',
-                pickup: 'Jacksonville, FL',
-                delivery: 'Miami, FL',
-                pay: 1350,
-                distance: '350 miles',
-                pickupTime: 'Today 7:00 PM',
-                loadType: 'Reefer',
-                equipment: '53\' Reefer',
-                broker: 'Florida Express',
-                urgent: true,
-            },
-            {
-                id: 'L010',
-                pickup: 'Charlotte, NC',
-                delivery: 'Miami, FL',
-                pay: 2400,
-                distance: '750 miles',
-                pickupTime: 'Tomorrow 6:00 AM',
-                loadType: 'Dry Van',
-                equipment: '53\' Dry Van',
-                broker: 'Southeast Express',
-                urgent: true,
-            },
-            
-            
-            {
-                id: 'L011',
-                pickup: 'Chicago, IL',
-                delivery: 'Dallas, TX',
-                pay: 2800,
-                distance: '925 miles',
-                pickupTime: 'Today 1:00 PM',
-                loadType: 'Dry Van',
-                equipment: '53\' Dry Van',
-                broker: 'ABC Logistics',
-                urgent: true,
-            },
-            {
-                id: 'L012',
-                pickup: 'Miami, FL',
-                delivery: 'Atlanta, GA',
-                pay: 1900,
-                distance: '665 miles',
-                pickupTime: 'Tomorrow 2:00 PM',
-                loadType: 'Reefer',
-                equipment: '53\' Reefer',
-                broker: 'South Florida Freight',
-                urgent: false,
-            },
-            {
-                id: 'L013',
-                pickup: 'Los Angeles, CA',
-                delivery: 'Phoenix, AZ',
-                pay: 1800,
-                distance: '372 miles',
-                pickupTime: 'Today 6:00 PM',
-                loadType: 'Flatbed',
-                equipment: '48\' Flatbed',
-                broker: 'West Coast Freight',
-                urgent: true,
-            },
-            {
-                id: 'L014',
-                pickup: 'Seattle, WA',
-                delivery: 'Portland, OR',
-                pay: 1200,
-                distance: '173 miles',
-                pickupTime: 'Tomorrow 10:00 AM',
-                loadType: 'Dry Van',
-                equipment: '53\' Dry Van',
-                broker: 'Pacific Hauling',
-                urgent: false,
-            },
-            {
-                id: 'L015',
-                pickup: 'Houston, TX',
-                delivery: 'New Orleans, LA',
-                pay: 1600,
-                distance: '350 miles',
-                pickupTime: 'Today 4:30 PM',
-                loadType: 'Reefer',
-                equipment: '53\' Reefer',
-                broker: 'Bayou Freight',
-                urgent: true,
-            },
-            {
-                id: 'L016',
-                pickup: 'Denver, CO',
-                delivery: 'Salt Lake City, UT',
-                pay: 1400,
-                distance: '520 miles',
-                pickupTime: 'Tomorrow 7:00 AM',
-                loadType: 'Flatbed',
-                equipment: '48\' Flatbed',
-                broker: 'Rocky Mountain Freight',
-                urgent: true,
-            },
-            {
-                id: 'L017',
-                pickup: 'Philadelphia, PA',
-                delivery: 'Boston, MA',
-                pay: 1700,
-                distance: '310 miles',
-                pickupTime: 'Today 3:00 PM',
-                loadType: 'Reefer',
-                equipment: '53\' Reefer',
-                broker: 'Northeast Freight',
-                urgent: true,
-            },
-            {
-                id: 'L018',
-                pickup: 'San Diego, CA',
-                delivery: 'Las Vegas, NV',
-                pay: 1500,
-                distance: '330 miles',
-                pickupTime: 'Tomorrow 9:00 AM',
-                loadType: 'Flatbed',
-                equipment: '48\' Flatbed',
-                broker: 'Desert Transport',
-                urgent: false,
-            },
-            {
-                id: 'L019',
-                pickup: 'Kansas City, MO',
-                delivery: 'St. Louis, MO',
-                pay: 950,
-                distance: '248 miles',
-                pickupTime: 'Tomorrow 11:00 AM',
-                loadType: 'Dry Van',
-                equipment: '53\' Dry Van',
-                broker: 'Heartland Logistics',
-                urgent: false,
-            },
-            {
-                id: 'L020',
-                pickup: 'El Paso, TX',
-                delivery: 'Tucson, AZ',
-                pay: 1200,
-                distance: '317 miles',
-                pickupTime: 'Today 5:00 PM',
-                loadType: 'Flatbed',
-                equipment: '48\' Flatbed',
-                broker: 'Southwest Freight',
-                urgent: true,
-            },
-        ];
-        
+        const { data: loads, error } = await supabase
+            .from('loads')
+            .select('*')
+            .eq('doc_type', 'load');
+        if (error) throw error;
         res.json({ success: true, loads });
-    } catch (error) {
+    } 
+    catch (error) {
         res.status(500).json({ success: false, error: 'Failed to fetch loads' });
     }
 });
@@ -343,54 +101,33 @@ app.post('/api/voice-to-chat', upload.single('audio'), async (req, res) => {
 // Enhanced chat endpoint with load context
 app.post('/api/chat', async (req, res) => {
     try {
-        const { message, history } = req.body;
 
-        // STEP 1: Fetch latest loads
-        const loadsResponse = await fetch('http://localhost:2300/api/loads')
-        const loadsResults = await loadsResponse.json()
-        const currentLoads = loadsResults.loads || []
-
-        // STEP 2: Pass loads into RAG-enabled function
-        const aiResponse = await generateChatResponse(
-            message, 
-            history, 
-            currentLoads
-        )
-           
-        // Directly handle 'accept load L001' style messages
-        const acceptLoadDirectRegex = /accept (?:the )?load ([a-zA-Z0-9]+)/i;
-        const acceptMatch = message && message.match(acceptLoadDirectRegex);
-        if (acceptMatch && acceptMatch[1]) {
-            const loadId = acceptMatch[1];
-            const load = (currentLoads || []).find(l => l.id === loadId);
-            if (load) {
-                return res.json({
-                    success: true,
-                    userMessage: message,
-                    aiResponse: `✅ Load ${loadId} accepted successfully!\n\n📍 ${load.pickup} → ${load.delivery}\n💰 $${load.pay.toLocaleString()}\n📏 ${load.distance}\n⏰ ${load.pickupTime}`,
-                    action: {
-                        type: 'accept_load',
-                        loadId: loadId
-                    },
-                    timestamp: new Date().toISOString()
-                });
-            } else {
-                return res.json({
-                    success: true,
-                    userMessage: message,
-                    aiResponse: `Sorry, I couldn't find load ${loadId}.`,
-                    action: null,
-                    timestamp: new Date().toISOString()
-                });
-            }
-        }
- 
+        const { message, history } = req.body
         if (!message) {
             return res.status(400).json({ 
                 success: false, 
                 error: 'Message is required' 
             });
         }
+
+        // 1. Embed the user message
+        const { data: embedData } = await openai.embeddings.create({
+        model: "text-embedding-3-small",
+        input: message
+        });
+        const userEmbedding = embedData[0].embedding;
+
+        // 2. Query Supabase for top 5 similar loads
+        const { data: relevantLoads, error } = await supabase.rpc('match_loads', {
+        query_embedding: userEmbedding,
+        match_count: 5
+        });
+        if (error) {
+        console.error('Vector search error:', error);
+        }
+
+        // 3. Pass relevantLoads to your LLM prompt
+        const aiResponse = await generateChatResponse(message, history, relevantLoads);
 
         res.json({
             success: true,

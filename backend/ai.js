@@ -26,9 +26,10 @@ async function transcribeVoice(audioFilePath) {
 
 // for an accepetd load - change what it looks like later
 function formatLoadsForPrompt(loads) {
-    return loads.map(load =>
-        `- ${load.id}: ${load.pickup} → ${load.delivery} | $${load.pay} | ${load.pickupTime}${load.urgent ? ' | URGENT' : ''}`
-    ).join("\n");
+    return loads.map(load => {
+        const l = load.metadata || load; // Use metadata if present
+        return `- ${l.id}: ${l.pickup} → ${l.delivery} | $${l.pay} | ${l.pickupTime}${l.urgent ? ' | URGENT' : ''}`;
+    }).join("\n");
 }
 
 async function generateChatResponse(userMessage, conversationHistory = [], currentLoads = []) {
