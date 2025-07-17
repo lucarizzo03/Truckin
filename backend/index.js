@@ -6,12 +6,9 @@ const fs = require('fs')
 const multer = require('multer')
 const { supabase } = require('./supabaseClient');
 const { 
-    transcribeVoice, 
     generateChatResponse, 
     handleVoiceToChat, 
-    streamChatResponse 
 } = require('./ai');
-
 
 const app = express();
 
@@ -327,11 +324,6 @@ app.post('/api/voice-to-chat', upload.single('audio'), async (req, res) => {
         const conversationHistory = req.body.history ? JSON.parse(req.body.history) : [];
         const currentLoads = req.body.currentLoads ? JSON.parse(req.body.currentLoads) : [];
         
-        console.log('Voice-to-chat endpoint received:', { 
-            historyLength: conversationHistory?.length, 
-            loadsCount: currentLoads?.length 
-        });
-        
         const result = await handleVoiceToChat(req.file.path, conversationHistory, currentLoads);
 
         // Clean up uploaded file
@@ -351,8 +343,20 @@ app.post('/api/voice-to-chat', upload.single('audio'), async (req, res) => {
 // Enhanced chat endpoint with load context
 app.post('/api/chat', async (req, res) => {
     try {
-        const { message, history, currentLoads } = req.body;
+        const { message, history } = req.body;
 
+        // STEP 1: Fetch latest loads
+        const loadsResponse = await fetch('http://localhost:2300/api/loads')
+        const loadsResults = await loadsResponse.json()
+        const currentLoads = loadsResults.loads || []
+
+        // STEP 2: Pass loads into RAG-enabled function
+        const aiResponse = await generateChatResponse(
+            message, 
+            history, 
+            currentLoads
+        )
+           
         // Directly handle 'accept load L001' style messages
         const acceptLoadDirectRegex = /accept (?:the )?load ([a-zA-Z0-9]+)/i;
         const acceptMatch = message && message.match(acceptLoadDirectRegex);
@@ -380,15 +384,7 @@ app.post('/api/chat', async (req, res) => {
                 });
             }
         }
-
-        console.log(message)
-        
-        console.log('Chat endpoint received:', { 
-            messageLength: message?.length, 
-            historyLength: history?.length, 
-            loadsCount: currentLoads?.length 
-        });
-        
+ 
         if (!message) {
             return res.status(400).json({ 
                 success: false, 
@@ -396,8 +392,6 @@ app.post('/api/chat', async (req, res) => {
             });
         }
 
-        const aiResponse = await generateChatResponse(message, history || [], currentLoads || []);
-        
         res.json({
             success: true,
             userMessage: message,
@@ -405,6 +399,7 @@ app.post('/api/chat', async (req, res) => {
             action: aiResponse.action,
             timestamp: new Date().toISOString()
         });
+        
     } catch (error) {
         console.error('Chat error:', error);
         res.status(500).json({ 

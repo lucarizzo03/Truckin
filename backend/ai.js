@@ -6,7 +6,6 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 })
 
-
 // voice -> text ( whisper-1 )
 async function transcribeVoice(audioFilePath) {
     try {
@@ -25,7 +24,7 @@ async function transcribeVoice(audioFilePath) {
     }
 }
 
-
+// for an accepetd load - change what it looks like later
 function formatLoadsForPrompt(loads) {
     return loads.map(load =>
         `- ${load.id}: ${load.pickup} → ${load.delivery} | $${load.pay} | ${load.pickupTime}${load.urgent ? ' | URGENT' : ''}`
@@ -273,7 +272,8 @@ async function handleVoiceToChat(audioFilePath, conversationHistory = [], curren
             timestamp: new Date().toISOString()
         };
         
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Voice to chat error:', error);
         return {
             success: false,
@@ -287,7 +287,6 @@ async function handleVoiceToChat(audioFilePath, conversationHistory = [], curren
 
 
 module.exports = {
-    transcribeVoice,
     generateChatResponse,
     handleVoiceToChat
 };
