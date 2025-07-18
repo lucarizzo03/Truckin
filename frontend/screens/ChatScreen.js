@@ -234,7 +234,6 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => {
             role: msg.isUser ? 'user' : 'assistant',
             content: msg.text
           })),
-          currentLoads: currentLoads // Send current loads for context
         })
       });
 

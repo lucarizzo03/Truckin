@@ -257,22 +257,17 @@ function getDefaultActionMessage(functionName, args) {
 }
 
 // Main handler for voice-to-chat flow
-async function handleVoiceToChat(audioFilePath, conversationHistory = [], currentLoads = []) {
+async function handleVoiceToChat(audioFilePath) {
     try {
         // Step 1: Transcribe voice to text
         const transcription = await transcribeVoice(audioFilePath);
         
-        // Step 2: Generate AI response
-        const aiResponse = await generateChatResponse(transcription, conversationHistory, currentLoads);
-        
-        // Step 3: Return complete chat exchange
+        // Step 2: Return complete chat exchange
         return {
             success: true,
             userMessage: transcription,
-            aiResponse: aiResponse,
             timestamp: new Date().toISOString()
         };
-        
     } 
     catch (error) {
         console.error('Voice to chat error:', error);

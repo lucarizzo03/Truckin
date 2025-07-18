@@ -79,15 +79,41 @@ app.post('/api/voice-to-chat', upload.single('audio'), async (req, res) => {
             });
         }
 
-        const conversationHistory = req.body.history ? JSON.parse(req.body.history) : [];
-        const currentLoads = req.body.currentLoads ? JSON.parse(req.body.currentLoads) : [];
+        const history = req.body.history ? JSON.parse(req.body.history) : [];
         
-        const result = await handleVoiceToChat(req.file.path, conversationHistory, currentLoads);
+        // 1. Transcribe the audio file
+        const userMessage = await handleVoiceToChat(req.file.path);
+
+        // 2. Embed the transcribed text
+        const { data: embedData } = await openai.embeddings.create({
+            model: "text-embedding-3-small",
+            input: userMessage
+        });
+        const userEmbedding = embedData[0].embedding;
+
+        // 3. Query Supabase for top 5 similar loads
+        const { data: relevantLoads, error } = await supabase.rpc('match_loads', {
+        query_embedding: userEmbedding,
+        match_count: 5
+        });
+        if (error) {
+        console.error('Vector search error:', error);
+        }
+
+        // 4. Pass relevantLoads to your LLM prompt
+        const aiResponse = await generateChatResponse(userMessage, history, relevantLoads);
 
         // Clean up uploaded file
         fs.unlinkSync(req.file.path);
 
-        res.json(result);
+        res.json({
+            success: true,
+            userMessage,
+            aiResponse: aiResponse.text,
+            action: aiResponse.action,
+            timestamp: new Date().toISOString()
+        });
+
     } catch (error) {
         console.error('Voice to chat error:', error);
         res.status(500).json({ 
