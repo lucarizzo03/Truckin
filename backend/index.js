@@ -17,7 +17,7 @@ const app = express();
 app.use(cors())
 app.use(express.json({limit: '5mb'}));
 
-// Add endpoint to get current loads
+// endpoint to get current loads
 app.get('/api/loads', async (req, res) => {
     try {
         const { data: loads, error } = await supabase
@@ -29,6 +29,21 @@ app.get('/api/loads', async (req, res) => {
     } 
     catch (error) {
         res.status(500).json({ success: false, error: 'Failed to fetch loads' });
+    }
+});
+
+// endpoint to get current bids
+app.get('/api/bids', async (req, res) => {
+    try {
+        const { data: bids, error } = await supabase
+            .from('bids')
+            .select('*')
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        res.json({ success: true, bids });
+    } 
+    catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to fetch bids' });
     }
 });
 
@@ -158,11 +173,50 @@ app.post('/api/chat', async (req, res) => {
         // 3. Pass relevantLoads to your LLM prompt
         const aiResponse = await generateChatResponse(message, history, relevantLoads);
 
+        // If a bid was placed, save it to Supabase
+        let bidResult = null;
+        if (aiResponse.action && aiResponse.action.type === "make_bid") {
+            // You may want to get userId from req.body or session
+            const { loadId, bidAmount, confirmation } = aiResponse.action;
+            const userId = req.body.userId || null; // Adjust as needed
+            const { data: bidData, error: bidError } = await supabase
+                .from('bids')
+                .insert([
+                    {
+                        load_id: loadId,
+                        bid_amount: bidAmount,
+                        confirmation,
+                        user_id: userId,
+                        created_at: new Date().toISOString()
+                    }
+                ]);
+            if (bidError) {
+                console.error('Error saving bid:', bidError);
+                bidResult = { success: false, error: bidError.message };
+            } else {
+                bidResult = { success: true, bid: bidData };
+            }
+        }
+
+        // Fetch all bids for this user (or all bids if userId not provided)
+        let bids = [];
+        if (aiResponse.action && aiResponse.action.type === "make_bid") {
+            const { data: allBids, error: allBidsError } = await supabase
+                .from('bids')
+                .select('*')
+                .order('created_at', { ascending: false });
+            if (!allBidsError && allBids) {
+                bids = allBids;
+            }
+        }
+
         res.json({
             success: true,
             userMessage: message,
             aiResponse: aiResponse.text,
             action: aiResponse.action,
+            bids,
+            bidResult,
             timestamp: new Date().toISOString()
         });
         
@@ -174,6 +228,7 @@ app.post('/api/chat', async (req, res) => {
         });
     }
 });
+
 
 
 

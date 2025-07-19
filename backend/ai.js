@@ -40,66 +40,34 @@ async function generateChatResponse(userMessage, conversationHistory = [], curre
         );
         const safeLoads = Array.isArray(currentLoads) ? currentLoads.slice(0, 12) : [];
         const formattedLoads = formatLoadsForPrompt(safeLoads);
-        const systemPrompt = `You are AutoPilot, a friendly and helpful AI assistant for truckers using a load-booking app.
+        const systemPrompt = `
+You are AutoPilot, a friendly and helpful AI assistant for truckers using a load-booking app.
 
-You help drivers **find, bid on ** using natural language through voice or text. Your responses should always be conversational and supportive, using emojis when appropriate.
-
----
-
-🔁 FLOW OVERVIEW:
-1. If the user wants to **see loads**, list them clearly (always include ID, pay, pickup, delivery, urgency, etc.).
-2. If the user wants to **bid** (even vaguely: "offer 2600", "can I get more?", etc.), respond with a make_bid function call.
-3. If the user wants to **accept** a load, ALWAYS respond with an accept_load function call. Never use plain text to confirm acceptance.
-4. If the user refers to loads using vague terms like “the best one”, “the urgent one”, or “the one to Chicago”, infer the load from available options.
-5. If you're not sure which load the user means, ask for clarification: "Which load did you want to bid on/accept? You can say the ID or city."
-6. Never say “I’m here to help.”
-7. Driver's can only accept bids from the BidsScreen
+Your job is to help drivers negotiate and place bids using natural language. Respond in a casual, conversational tone and include emojis where appropriate.
 
 ---
 
-FUNCTION RULES:
+FLOW:
 
-- Accepting a Load  
-  If the user says anything like "accept", "book", "take", "lock in", etc., always respond with:  
-  (function_call: accept_load, loadId: $loadId, confirmation: "$userMessage")
-
-- Bidding  
-  If the user mentions negotiating price, offering an amount, or asking for more, always respond with:  
-  (function_call: make_bid, loadId: $loadId, bidAmount: $amount, confirmation: "$userMessage")
+1. If the user mentions bidding, offering a price, or negotiating — ALWAYS respond by using the make_bid function call with the correct loadId and bidAmount. Do not just reply in text; use the provided function.
+2. If the user's message is vague (e.g. "that Dallas one", "urgent one"), try to match it to a load using city, urgency, or price.
+3. If unclear, ask the user: "Which load did you want to bid on? You can say the ID or city."
 
 ---
 
-INTELLIGENCE TIPS:
-
-- Interpret slang, typos, and casual talk (e.g. “accpt high payin”, “offer 3k for phoenix”, “book that urgent one”).
-- Match vague intent to correct load using details like pay, pickup/delivery city, urgency, or broker.
-- Always try to keep things smooth and efficient — you're their smart, reliable co-pilot.
-
----
-
-EXAMPLES:
-
-User: “show me the best paying”
-→ "Here’s the highest paying load: [Details]"
-
-User: “can I get 3000 for that Dallas one?”
-→ (Function call: make_bid with loadId: L001, bidAmount: 3000, confirmation: "Submitting a bid of $3000 for load L001 to Dallas. 🤝")
-
-User: “offer 2k on that Phoenix job”
-→ (Function call: make_bid with loadId: L003, bidAmount: 2000, confirmation: "Placing your $2000 offer on load L003 to Phoenix now.")
+IMPORTANT:
+- When a bid is detected, ALWAYS use the make_bid function call. Do not only reply in text.
+- Your function call should include loadId, bidAmount, and a confirmation message for the user.
+- You may also include a friendly confirmation in your reply, but the function call is required for every bid.
 
 ---
 
-DO NOT:
-- Never confirm load booking or bidding in plain text without using a function call.
-- Never ask “How can I help?”
-- Never ignore vague or slang inputs — always try to infer.
+AVAILABLE LOADS:
 
----
-
-You have access to the following available loads:
 ${formattedLoads}
 `
+
+
         const messages = [
             {
                 role: "system", 
@@ -182,26 +150,28 @@ ${formattedLoads}
 
         console.log(response)
         
-        // Check for tool_calls (array, new format)
+        // Support both tool_calls (array) and function_call (object)
+        let functionName, functionArgs;
         if (response.tool_calls && response.tool_calls.length > 0) {
             const toolCall = response.tool_calls[0];
-            const functionName = toolCall.function.name;
-            const functionArgs = JSON.parse(toolCall.function.arguments);
-        
-      
+            functionName = toolCall.function.name;
+            functionArgs = JSON.parse(toolCall.function.arguments);
+        } else if (response.function_call) {
+            functionName = response.function_call.name;
+            functionArgs = JSON.parse(response.function_call.arguments);
+        }
 
+        if (functionName) {
             // Always clean response.content before returning
             const cleanContent = response.content
                 ? response.content.replace(/function_call: \w+.*$/gi, '').trim()
                 : getDefaultActionMessage(functionName, functionArgs);
-            
-            
 
             if (functionName === "make_bid") {
                 return {
                     text: cleanContent,
                     action: {
-                        type: functionName, 
+                        type: functionName,
                         ...functionArgs,
                         next: {
                             type: 'navigate_to_screen',
