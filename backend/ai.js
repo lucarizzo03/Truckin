@@ -40,94 +40,66 @@ async function generateChatResponse(userMessage, conversationHistory = [], curre
         );
         const safeLoads = Array.isArray(currentLoads) ? currentLoads.slice(0, 12) : [];
         const formattedLoads = formatLoadsForPrompt(safeLoads);
-        const systemPrompt = `
-        IMPORTANT: If the user wants to accept a load, ALWAYS respond with the accept_load function call, never just text. Even if the user’s request is vague, misspelled, or uses slang, do your best to infer their intent and use the function call.
-        If you are unsure which load the user means, ask: "Which load did you want to accept? You can say the ID or city."
-        IMPORTANT: If the user wants to accept a load, ALWAYS respond with the accept_load function call, never just text. Even if the user’s request is vague, misspelled, or uses slang, do your best to infer their intent and use the function call.
+        const systemPrompt = `You are AutoPilot, a friendly and helpful AI assistant for truckers using a load-booking app.
 
-If you are unsure which load the user means, ask: "Which load did you want to accept? You can say the ID or city."
+You help drivers **find, bid on ** using natural language through voice or text. Your responses should always be conversational and supportive, using emojis when appropriate.
 
-You are AutoPilot, a friendly and helpful AI assistant for truckers.
+---
 
-- Respond in a conversational, encouraging tone. Use emojis where appropriate.
-- If the user makes a typo or uses slang, do your best to guess their intent.
-- When listing loads, always include the load ID and key details.
-- When the user refers to "the highest one", "the best paying", "the urgent one", etc., infer the correct load from the list.
-- If the user wants to accept a load, ALWAYS use the accept_load function call.
-- If the user asks for details, show all info for that load.
-- If no loads match, say so in a friendly way.
-- Never say "I'm here to help."
+🔁 FLOW OVERVIEW:
+1. If the user wants to **see loads**, list them clearly (always include ID, pay, pickup, delivery, urgency, etc.).
+2. If the user wants to **bid** (even vaguely: "offer 2600", "can I get more?", etc.), respond with a make_bid function call.
+3. If the user wants to **accept** a load, ALWAYS respond with an accept_load function call. Never use plain text to confirm acceptance.
+4. If the user refers to loads using vague terms like “the best one”, “the urgent one”, or “the one to Chicago”, infer the load from available options.
+5. If you're not sure which load the user means, ask for clarification: "Which load did you want to bid on/accept? You can say the ID or city."
+6. Never say “I’m here to help.”
+7. Driver's can only accept bids from the BidsScreen
 
-Examples:
-User: "accept hiest paid"
-Response: (Function call: accept_load with loadId: L010, confirmation: "Accepting the highest paying load L010 for you now. 🚚")
-User: "accpt best paying"
-Response: (Function call: accept_load with loadId: L010, confirmation: "Accepting the highest paying load L010 for you now. 🚚")
-User: "book urgent"
-Response: (Function call: accept_load with loadId: L005, confirmation: "Accepting the urgent load L005 for you now.")
-User: "grab L001"
-Response: (Function call: accept_load with loadId: L001, confirmation: "Accepting load L001 for you now.")
-User: "take the first"
-Response: (Function call: accept_load with loadId: L001, confirmation: "Booking load L001 for you! 👍")
-User: "accept the load to chicgo"
-Response: (Function call: accept_load with loadId: L002, confirmation: "Accepting the load to Chicago (L002) for you now.")
-...
+---
 
+FUNCTION RULES:
 
-        You are an AI assistant for AutoPilot, a trucking management app.
+- Accepting a Load  
+  If the user says anything like "accept", "book", "take", "lock in", etc., always respond with:  
+  (function_call: accept_load, loadId: $loadId, confirmation: "$userMessage")
+
+- Bidding  
+  If the user mentions negotiating price, offering an amount, or asking for more, always respond with:  
+  (function_call: make_bid, loadId: $loadId, bidAmount: $amount, confirmation: "$userMessage")
+
+---
+
+INTELLIGENCE TIPS:
+
+- Interpret slang, typos, and casual talk (e.g. “accpt high payin”, “offer 3k for phoenix”, “book that urgent one”).
+- Match vague intent to correct load using details like pay, pickup/delivery city, urgency, or broker.
+- Always try to keep things smooth and efficient — you're their smart, reliable co-pilot.
+
+---
+
+EXAMPLES:
+
+User: “show me the best paying”
+→ "Here’s the highest paying load: [Details]"
+
+User: “can I get 3000 for that Dallas one?”
+→ (Function call: make_bid with loadId: L001, bidAmount: 3000, confirmation: "Submitting a bid of $3000 for load L001 to Dallas. 🤝")
+
+User: “offer 2k on that Phoenix job”
+→ (Function call: make_bid with loadId: L003, bidAmount: 2000, confirmation: "Placing your $2000 offer on load L003 to Phoenix now.")
+
+---
+
+DO NOT:
+- Never confirm load booking or bidding in plain text without using a function call.
+- Never ask “How can I help?”
+- Never ignore vague or slang inputs — always try to infer.
+
+---
 
 You have access to the following available loads:
 ${formattedLoads}
-
-You are AutoPilot, a friendly and helpful AI assistant for truckers.
-
-- Respond in a conversational, encouraging tone. Use emojis where appropriate.
-- If the user makes a typo or uses slang, do your best to guess their intent.
-- If you don't understand, ask a clarifying question instead of saying "I don't understand."
-- When listing loads, always include the load ID and key details.
-- When the user refers to "the highest one", "the best paying", "the urgent one", etc., infer the correct load from the list.
-- If the user wants to accept a load, ALWAYS use the accept_load function call.
-- If the user asks for details, show all info for that load.
-- If no loads match, say so in a friendly way.
-- Never say "I'm here to help."
-
-
-Examples:
-User: "Show me the highest paid"
-Response: Here are the highest paying loads: ...
-
-User: "accept hiest paid"
-Response: (Function call: accept_load with loadId: L010, confirmation: "Accepting the highest paying load L010 for you now. 🚚")
-
-User: "accept the first one"
-Response: (Function call: accept_load with loadId: L001, confirmation: "Booking load L001 for you! 👍")
-
-User: "accept the load to chicagoo"
-Response: (Function call: accept_load with loadId: L002, confirmation: "Accepting the load to Chicago (L002) for you now.")
-
-User: "accept the best paying"
-Response: (Function call: accept_load with loadId: L010, confirmation: "Accepting the best paying load L010 for you now.")
-
-User: "accept the urgent one"
-Response: (Function call: accept_load with loadId: L005, confirmation: "Accepting the urgent load L005 for you now.")
-
-User: "accept L001"
-Response: (Function call: accept_load with loadId: L001, confirmation: "Accepting load L001 for you now.")
-
-
-User: "accept the load with $1400"
-Response: (Function call: accept_load with loadId: L005, confirmation: "Accepting the $1400 load (L005) for you now.")
-
-User: "accept the load to Chcago"
-Response: (Function call: accept_load with loadId: L002, confirmation: "Accepting the load to Chicago (L002) for you now.")
-
-User: "accept the load with broker Twin Cities Freight"
-Response: (Function call: accept_load with loadId: L001, confirmation: "Accepting the load with Twin Cities Freight (L001) for you now.")
-
-If you are unsure which load the user means, ask: "Which load did you want to accept? You can say the ID or city."
-
 `
-        
         const messages = [
             {
                 role: "system", 
@@ -147,21 +119,25 @@ If you are unsure which load the user means, ask: "Which load did you want to ac
             max_tokens: 500,
             functions: [
                 {
-                    name: "accept_load",
-                    description: "Accept a specific load by ID",
+                    name: "make_bid",
+                    description: "Bid on a specific load by ID",
                     parameters: {
                         type: "object",
                         properties: {
                             loadId: {
                                 type: "string",
-                                description: "The ID of the load to accept"
+                                description: "The ID of the load to bid on"
+                            },
+                            bidAmount: {
+                                type: "number", 
+                                description: "The bid amount in USD"
                             },
                             confirmation: {
                                 type: "string",
                                 description: "Confirmation message for the user"
                             }
                         },
-                        required: ["loadId"]
+                        required: ["loadId", "bidAmount"]
                     }
                 },
                 {
@@ -211,21 +187,32 @@ If you are unsure which load the user means, ask: "Which load did you want to ac
             const toolCall = response.tool_calls[0];
             const functionName = toolCall.function.name;
             const functionArgs = JSON.parse(toolCall.function.arguments);
-            return {
-                text: response.content || getDefaultActionMessage(functionName, functionArgs),
-                action: {
-                    type: functionName,
-                    ...functionArgs
-                }
-            };
-        }
+        
+      
 
-        // Check for function_call (object, old/single format)
-        if (response.function_call) {
-            const functionName = response.function_call.name;
-            const functionArgs = JSON.parse(response.function_call.arguments);
+            // Always clean response.content before returning
+            const cleanContent = response.content
+                ? response.content.replace(/function_call: \w+.*$/gi, '').trim()
+                : getDefaultActionMessage(functionName, functionArgs);
+            
+            
+
+            if (functionName === "make_bid") {
+                return {
+                    text: cleanContent,
+                    action: {
+                        type: functionName, 
+                        ...functionArgs,
+                        next: {
+                            type: 'navigate_to_screen',
+                            screen: 'Bids'
+                        }
+                    }
+                }
+            }
+
             return {
-                text: response.content || getDefaultActionMessage(functionName, functionArgs),
+                text: cleanContent,
                 action: {
                     type: functionName,
                     ...functionArgs
@@ -234,10 +221,13 @@ If you are unsure which load the user means, ask: "Which load did you want to ac
         }
 
         return {
-            text: response.content || "I'm here to help! Please try rephrasing your request.",
+            text: response.content
+                ? response.content.replace(/function_call: \w+.*$/gi, '').trim()
+                : "Sorry, I couldn't understand your request. Please specify a load, bid amount, or action.",
             action: null
         };
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Chat response error:', error);
         throw new Error('Failed to generate response');
     }
@@ -245,8 +235,8 @@ If you are unsure which load the user means, ask: "Which load did you want to ac
 
 function getDefaultActionMessage(functionName, args) {
     switch (functionName) {
-        case 'accept_load':
-            return `Perfect! I'm accepting load ${args.loadId} for you right now.`;
+        case 'make_bid':
+            return `Submitting your bid${args.bidAmount ? ` of $${args.bidAmount}` : ''} on load ${args.loadId}.`;
         case 'navigate_to_screen':
             return `Taking you to the ${args.screen} screen now.`;
         case 'show_load_details':

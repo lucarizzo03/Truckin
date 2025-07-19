@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 // Import screens
 import HomeScreen from './screens/HomeScreen';
-import LoadsScreen from './screens/LoadsScreen';
+import BidsScreen from './screens/BidsScreen';
 import RouteScreen from './screens/RouteScreen';
 import FinanceScreen from './screens/FinanceScreen';
 import ChatScreen from './screens/ChatScreen';
@@ -19,7 +19,7 @@ import OnboardingScreen from './screens/OnboardingScreen';
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-function TabNavigator({ currentLoad, setCurrentLoad, completedLoads, addCompletedLoad, invoices, addInvoice, markInvoicePaid, expenses, setExpenses }) {
+function TabNavigator({ currentLoad, setCurrentLoad, completedLoads, addCompletedLoad, invoices, addInvoice, markInvoicePaid, expenses, setExpenses, bids, setBids }) {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -28,8 +28,8 @@ function TabNavigator({ currentLoad, setCurrentLoad, completedLoads, addComplete
 
           if (route.name === 'Home') {
             iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'Profile') {
-            iconName = focused ? 'person' : 'person-outline';
+          } else if (route.name === 'Bids') {
+            iconName = focused ? 'pricetag' : 'pricetag-outline';
           } else if (route.name === 'Route') {
             iconName = focused ? 'map' : 'map-outline';
           } else if (route.name === 'Finance') {
@@ -71,7 +71,22 @@ function TabNavigator({ currentLoad, setCurrentLoad, completedLoads, addComplete
 
       <Tab.Screen name="Chat"
         children={props => (
-          <ChatScreen {...props} setCurrentLoad={setCurrentLoad} />
+          <ChatScreen {...props} 
+          bids={bids}
+          setBids={setBids}
+          />
+        )}
+      />
+
+
+      <Tab.Screen name="Bids"
+        children={props => (
+          <BidsScreen 
+          {...props} 
+          setCurrentLoad={setCurrentLoad} 
+          bids={bids}
+          setBids={setBids}
+          />
         )}
       />
 
@@ -91,15 +106,7 @@ function TabNavigator({ currentLoad, setCurrentLoad, completedLoads, addComplete
       />
 
 
-      <Tab.Screen name="Profile"
-        children={props => (
-          <LoadsScreen 
-          {...props} 
-          setCurrentLoad={setCurrentLoad} 
-          addCompletedLoad={addCompletedLoad}
-          />
-        )}
-      />
+      
 
 
      
@@ -141,6 +148,7 @@ export default function App() {
     );
   };
   const [expenses, setExpenses] = useState([]);
+  const [bids, setBids] = useState([])
 
 
   return (
@@ -184,6 +192,8 @@ export default function App() {
                   markInvoicePaid={markInvoicePaid}
                   expenses={expenses}
                   setExpenses={setExpenses}
+                  bids={bids}
+                  setBids={setBids}
                 />
               )}
             />
@@ -198,10 +208,6 @@ export default function App() {
 
           )}
         </Stack.Navigator>
-
-
-
-
       </NavigationContainer>
     </View>
   );

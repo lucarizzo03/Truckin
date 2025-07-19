@@ -126,6 +126,7 @@ app.post('/api/voice-to-chat', upload.single('audio'), async (req, res) => {
 
 // Enhanced chat endpoint with load context
 app.post('/api/chat', async (req, res) => {
+    console.log("CHAT ENDPOINT")
     try {
 
         const { message, history } = req.body
@@ -136,10 +137,12 @@ app.post('/api/chat', async (req, res) => {
             });
         }
 
+        const safeMessage = typeof message === "string" ? message : "";
+
         // 1. Embed the user message
         const { data: embedData } = await openai.embeddings.create({
         model: "text-embedding-3-small",
-        input: message
+        input: safeMessage
         });
         const userEmbedding = embedData[0].embedding;
 

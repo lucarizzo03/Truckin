@@ -12,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 
-const ChatScreen = ({ route, navigation, setCurrentLoad }) => {
+const ChatScreen = ({ route, navigation, bids, setBids }) => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -40,7 +40,10 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => {
       const response = await fetch('http://localhost:2300/api/loads');
       const result = await response.json();
       if (result.success) {
-        setCurrentLoads(result.loads);
+        setCurrentLoads(result.loads.map(l => ({
+          ...l,
+          id: l.id || l.load_id
+        })));
       }
     } catch (error) {
       console.error('Failed to fetch loads:', error);
@@ -91,10 +94,10 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => {
   const handleVoiceMessage = async (audioUri) => {
     try {
       setIsLoading(true);
-      
+
       // Always fetch fresh loads before processing voice message
       await fetchCurrentLoads();
-      
+
       // Create form data for file upload
       const formData = new FormData();
       formData.append('audio', {
@@ -106,7 +109,6 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => {
         role: msg.isUser ? 'user' : 'assistant',
         content: msg.text
       }))));
-      formData.append('currentLoads', JSON.stringify(currentLoads));
 
       // Send voice message to backend
       const response = await fetch('http://localhost:2300/api/voice-to-chat', {
@@ -120,29 +122,39 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => {
       const result = await response.json();
 
       if (result.success) {
-        // Add user's transcribed message
+        // Filter out function_call markers from AI response text
+        let aiText = typeof result.aiResponse === 'object' ? result.aiResponse.text : result.aiResponse;
+        if (typeof aiText === 'string') {
+          aiText = aiText.replace(/function_call: \w+/gi, '').trim();
+        }
         const userMessage = {
           id: Date.now(),
-          text: result.userMessage,
+          text: aiText,
           isUser: true,
           timestamp: new Date()
         };
         setMessages(prev => [...prev, userMessage]);
 
-        // Add AI response
+        // Add AI response (filtered as well)
+        const aiMessageText = typeof result.aiResponse === 'object' ? result.aiResponse.text : result.aiResponse;
+        const filteredAiMessageText = typeof aiMessageText === 'string'
+          ? aiMessageText.replace(/function_call: \w+/gi, '').trim()
+          : aiMessageText;
+
         const aiMessage = {
           id: Date.now() + 1,
-          text: typeof result.aiResponse === 'object' ? result.aiResponse.text : result.aiResponse,
+          text: filteredAiMessageText,
           isUser: false,
           timestamp: new Date()
         };
         setMessages(prev => [...prev, aiMessage]);
 
         // Execute any actions
-        if (result.aiResponse.action) {
-          setTimeout(() => executeAction(result.aiResponse.action), 1000);
+        if (result.action) {
+          setTimeout(() => executeAction(result.action), 1000);
         }
-      } else {
+      } 
+      else {
         Alert.alert('Error', result.error || 'Failed to process voice message');
       }
     } catch (error) {
@@ -154,54 +166,46 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => {
   };
 
   const executeAction = async (action) => {
+    const loads = await fetchCurrentLoads()
     switch (action.type) {
-      case 'accept_load':
-        await handleLoadAcceptance(action.loadId);
-        break;
       case 'navigate_to_screen':
         navigation.navigate(action.screen, action.params);
         break;
       case 'show_load_details':
         showLoadDetails(action.loadIds);
         break;
+      case 'make_bid':
+        const load = loads.find(l => String(l.id) === String(action.loadId));
+
+
+        // console.log('Bid Action:', action);
+        // console.log('Matched Load:', load);
+
+       
+        
+        setBids(prev => [
+          ...prev,
+          {
+            id: load ? load.id : action.loadId, 
+            pickup: load ? load.pickup : action.pickup || 'Unknown',
+            delivery: load ? load.delivery : action.delivery || 'Unknown',
+            bidAmount: action.bidAmount,
+            status: 'active_bid',
+          }
+        ]);
+
+        Alert.alert(
+          'Bid placed!',
+          `Bid for $${action.bidAmount} on load ${load ? load.id : action.loadId} sent to Bids screen.`
+        );
+
+        if (action.next && action.next.type === 'navigate_to_screen') {
+          navigation.navigate(action.next.screen);
+        }
+        break;
+
       default:
         console.log('Unknown action:', action);
-    }
-  };
-
-  const handleLoadAcceptance = async (loadId) => {
-    try {
-      const load = currentLoads.find(l => l.id === loadId || l.load_id === loadId);
-      if (load) {
-        const l = load.metadata ? { ...load, ...load.metadata } : load;
-        setCurrentLoad(l);
-        
-        // Add confirmation message to chat
-        const confirmationMessage = {
-          id: Date.now(),
-          text: `✅ Load ${loadId} accepted successfully!\n\n📍 ${l.pickup} → ${l.delivery}\n💰 $${typeof l.pay === 'number' ? l.pay.toLocaleString() : l.pay ?? 'N/A'}\n📏 ${l.distance}\n⏰ ${l.pickupTime}`,
-          isUser: false,
-          timestamp: new Date()
-        };
-        
-        setMessages(prev => [...prev, confirmationMessage]);
-        
-        // Re-fetch loads to keep the list current
-        await fetchCurrentLoads();
-        
-        Alert.alert(
-          'Load Accepted!', 
-          `You've accepted load ${loadId}. Would you like to start navigation?`,
-          [
-            { text: 'Later', style: 'cancel' },
-            { text: 'Start Route', onPress: () => navigation.navigate('Route') }
-          ]
-        );
-      }
-    } 
-    catch (error) {
-      console.error('Load acceptance error:', error);
-      Alert.alert('Error', 'Failed to accept load');
     }
   };
 
@@ -240,9 +244,13 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => {
       const result = await response.json();
 
       if (result.success) {
+        let aiText = result.aiResponse;
+        if (typeof aiText === 'string') {
+          aiText = aiText.replace(/function_call: \w+/gi, '').trim();
+        }
         const aiMessage = {
           id: Date.now() + 1,
-          text: result.aiResponse,
+          text: aiText,
           isUser: false,
           timestamp: new Date()
         };
@@ -250,7 +258,7 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => {
 
         // Execute any actions
         if (result.action) {
-          setTimeout(() => executeAction(result.action), 1000);
+          setTimeout(() => executeAction(result.action), 100);
         }
       }
     } catch (error) {
@@ -261,25 +269,6 @@ const ChatScreen = ({ route, navigation, setCurrentLoad }) => {
     }
   };
 
-  // Add this function after handleLoadAcceptance
-  const showLoadDetails = (loadIds) => {
-    const loadDetails = loadIds.map(id => {
-    const load = currentLoads.find(l => l.id === id || l.load_id === id);
-    if (load) {
-      return `🚛 Load ${load.id}:\n📍 ${load.pickup} → ${load.delivery}\n💰 $${typeof load.pay === 'number' ? load.pay.toLocaleString() : (load.pay ?? 'N/A')}\n📏 ${load.distance}\n⏰ ${load.pickupTime}\n🏢 ${load.broker}\n${load.urgent ? '🚨 URGENT' : ''}`;
-    }
-    return `Load ${id} not found`;
-  }).join('\n\n');
-
-    const detailsMessage = {
-      id: Date.now(),
-      text: loadDetails,
-      isUser: false,
-      timestamp: new Date()
-    };
-    
-    setMessages(prev => [...prev, detailsMessage]);
-  };
 
   return (
     <View style={styles.container}>
