@@ -156,11 +156,17 @@ ${formattedLoads}
             const toolCall = response.tool_calls[0];
             functionName = toolCall.function.name;
             functionArgs = JSON.parse(toolCall.function.arguments);
-        } else if (response.function_call) {
+        } 
+        else if (response.function_call) {
             functionName = response.function_call.name;
             functionArgs = JSON.parse(response.function_call.arguments);
         }
 
+
+
+
+
+        
         if (functionName) {
             // Always clean response.content before returning
             const cleanContent = response.content
@@ -189,6 +195,13 @@ ${formattedLoads}
                 }
             };
         }
+
+
+
+
+
+
+
 
         return {
             text: response.content

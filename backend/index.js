@@ -144,7 +144,9 @@ app.post('/api/chat', async (req, res) => {
     console.log("CHAT ENDPOINT")
     try {
 
+        // extract message and chat history
         const { message, history } = req.body
+
         if (!message) {
             return res.status(400).json({ 
                 success: false, 
@@ -170,8 +172,27 @@ app.post('/api/chat', async (req, res) => {
         console.error('Vector search error:', error);
         }
 
+
+
+
+
+
+
+
+
+        // MCP goes here
+
+
+
+
+
+
+
+
+
         // 3. Pass relevantLoads to your LLM prompt
         const aiResponse = await generateChatResponse(message, history, relevantLoads);
+
 
         // If a bid was placed, save it to Supabase
         let bidResult = null;
