@@ -8,3 +8,8 @@ Frontend:
 - cd frontend
 - npx expo start
 
+
+MCP 
+- cd MCP
+- MCP server 
+

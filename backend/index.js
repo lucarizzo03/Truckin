@@ -11,6 +11,7 @@ const {
 } = require('./ai')
 const { OpenAI } = require('openai');
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const axios = require('axios')
 
 const app = express();
 
@@ -56,7 +57,7 @@ if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-
+// for voice to chat file
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, uploadsDir);
@@ -66,6 +67,7 @@ const storage = multer.diskStorage({
     }
 });
 
+// for voice to chat files
 const upload = multer({ 
     storage,
     fileFilter: (req, file, cb) => {
@@ -81,6 +83,14 @@ const upload = multer({
     },
     limits: { fileSize: 25 * 1024 * 1024 } // 25MB limit (Whisper limit)
 });
+
+// tells it if it should run RAG depending on key words
+function shouldRunRAG(message) {
+    if (typeof message !== "string") return false;
+    // Simple keyword-based intent detection
+    const keywords = ["load", "loads", "available", "find", "search", "route", "pickup", "delivery"];
+    return keywords.some(kw => message.toLowerCase().includes(kw));
+}
 
 // AI Endpoints
 
@@ -144,7 +154,7 @@ app.post('/api/chat', async (req, res) => {
     console.log("CHAT ENDPOINT")
     try {
 
-        // extract message and chat history
+        // extract message and chat history -> ALSO NEED USERID EVENTUALLY 
         const { message, history } = req.body
 
         if (!message) {
@@ -155,43 +165,29 @@ app.post('/api/chat', async (req, res) => {
         }
 
         const safeMessage = typeof message === "string" ? message : "";
+       
+        // fetch context from MCP
+        let mcpResponse = await axios.post('http://localhost:3001/MCP/chat', {
+            mesasge: safeMessage,
+            history
+        }) // -> ALSO NEED USERID EVENTUALLY 
 
-        // 1. Embed the user message
-        const { data: embedData } = await openai.embeddings.create({
-        model: "text-embedding-3-small",
-        input: safeMessage
-        });
-        const userEmbedding = embedData[0].embedding;
+        console.log("past MCP response")
 
-        // 2. Query Supabase for top 5 similar loads
-        const { data: relevantLoads, error } = await supabase.rpc('match_loads', {
-        query_embedding: userEmbedding,
-        match_count: 5
-        });
-        if (error) {
-        console.error('Vector search error:', error);
+        // the context
+        let mcpContext = mcpResponse.data
+
+        // if shouldRunRAG true, its runs it 
+        let relevantLoads = []
+        if (shouldRunRAG(safeMessage)) {
+            relevantLoads = await RAG(safeMessage)
         }
 
-
-
-
-
-
-
-
-
-        // MCP goes here
-
-
-
-
-
-
-
-
-
-        // 3. Pass relevantLoads to your LLM prompt
-        const aiResponse = await generateChatResponse(message, history, relevantLoads);
+        // 3. Pass relevantLoads + other context + other tools to LLM prompt
+        const aiResponse = await generateChatResponse(
+            mcpContext.response.message || message,
+            mcpContext.response.history || history,
+            relevantLoads);
 
 
         // If a bid was placed, save it to Supabase
