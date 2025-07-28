@@ -170,7 +170,7 @@ app.post('/api/chat', async (req, res) => {
         let mcpResponse = await axios.post('http://localhost:3001/MCP/chat', {
             mesasge: safeMessage,
             history
-        }) // -> ALSO NEED USERID EVENTUALLY 
+        }) 
 
         console.log("past MCP response")
 
