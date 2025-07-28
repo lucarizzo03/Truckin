@@ -131,25 +131,6 @@ async function generateChatResponse(userMessage, conversationHistory = [], curre
                     }
                 },
                 {
-                    name: "navigate_to_screen",
-                    description: "Navigate to a specific screen with parameters",
-                    parameters: {
-                        type: "object",
-                        properties: {
-                            screen: {
-                                type: "string",
-                                enum: ["Loads", "Route", "Finance", "Chat"],
-                                description: "The screen to navigate to"
-                            },
-                            params: {
-                                type: "object",
-                                description: "Parameters to pass to the screen"
-                            }
-                        },
-                        required: ["screen"]
-                    }
-                },
-                {
                     name: "show_load_details",
                     description: "Display detailed information about specific loads",
                     parameters: {
@@ -200,7 +181,7 @@ async function generateChatResponse(userMessage, conversationHistory = [], curre
 
 
 
-            
+
 
             return {
                 text: cleanContent,

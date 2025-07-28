@@ -179,62 +179,18 @@ app.post('/api/chat', async (req, res) => {
             relevantLoads
         );
 
-        let tooResult = null
-        let currBids = []
-        let bidRes = null
+       let toolResult = null
 
-        // 3. If LLM tool call, call MCP
-        if (aiResponse.action && aiResponse.action.type) {
-
+       // 3. If LLM tool call, call MCP
+       if (aiResponse.action && aiResponse.action.type) {
+            const mcpArgs = { ...aiResponse.action, userId };
             const mcpResponse = await axios.post('http://localhost:3001/MCP/chat', {
                 tool: aiResponse.action.type,
-                args: aiResponse.action
-            })
-
-            toolResult = mcpResponse.data
-
-            if (aiResponse.action.type == "make_bid") {
-                const { loadId, bidAmount, confirmation } = aiResponse.action;
-                const { data: bidData, error: bidError } = await supabase
-                    .from('bids')
-                    .insert([
-                        {
-                            load_id: loadId,
-                            bid_amount: bidAmount,
-                            confirmation,
-                            user_id: userId || null,
-                            created_at: new Date().toISOString()
-                        }
-                    ]);
-                if (bidError) {
-                    console.error('Error saving bid:', bidError);
-                    bidResult = { success: false, error: bidError.message };
-                } else {
-                    bidResult = { success: true, bid: bidData };
-                }
-                // Fetch all bids for this user (or all bids if userId not provided)
-                const { data: allBids, error: allBidsError } = await supabase
-                    .from('bids')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-                if (!allBidsError && allBids) {
-                    bids = allBids;
-                }
-            }
-
-
-            // more tool call actions ? 
-
-
-
-
-
-
-
-
-
-
+                args: mcpArgs
+            });
+            toolResult = mcpResponse.data;
         }
+        
 
         res.json({
             success: true,
@@ -242,6 +198,7 @@ app.post('/api/chat', async (req, res) => {
             aiResponse: aiResponse.text,
             action: aiResponse.action,
             bids,
+            toolResult,
             bidResult,
             timestamp: new Date().toISOString()
         });

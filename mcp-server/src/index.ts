@@ -3,7 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import express, { Request, Response } from "express";
-import { supabase } from "./backend/supabaseClientTS";
+import { supabase } from "./supabaseClientTS";
 
 
 function getServer() {
@@ -13,7 +13,7 @@ function getServer() {
     });
 
 
-    
+    // make bid tool call
     server.tool("make_bid", async (extra) => {
         const { loadId, bidAmount, confirmation, userId } = (extra as any).args ?? {};
 
@@ -70,6 +70,12 @@ function getServer() {
 
 
 
+
+
+
+
+
+    
     return server
 }
 

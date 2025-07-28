@@ -256,6 +256,18 @@ const ChatScreen = ({ route, navigation, bids, setBids }) => {
         };
         setMessages(prev => [...prev, aiMessage]);
 
+        // if action was make_bid
+        if (
+          result.action &&
+          result.action.type === "make_bid" &&
+          result.toolResult &&
+          result.toolResult.success &&
+          result.toolResult.bids
+        ) {
+          setBids(result.toolResult.bids);
+          navigation.navigate('BidsScreen');
+        }
+
         // Execute any actions
         if (result.action) {
           setTimeout(() => executeAction(result.action), 100);
