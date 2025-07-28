@@ -32,6 +32,29 @@ function formatLoadsForPrompt(loads) {
     }).join("\n");
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function generateChatResponse(userMessage, conversationHistory = [], currentLoads = []) {
     try {
         userMessage = typeof userMessage === "string" ? userMessage : "";
@@ -41,32 +64,31 @@ async function generateChatResponse(userMessage, conversationHistory = [], curre
         const safeLoads = Array.isArray(currentLoads) ? currentLoads.slice(0, 12) : [];
         const formattedLoads = formatLoadsForPrompt(safeLoads);
         const systemPrompt = `
-You are AutoPilot, a friendly and helpful AI assistant for truckers using a load-booking app.
+        You are AutoPilot, a friendly and helpful AI assistant for truckers using a load-booking app.
 
-Your job is to help drivers negotiate and place bids using natural language. Respond in a casual, conversational tone and include emojis where appropriate.
+        Your job is to help drivers negotiate and place bids using natural language. Respond in a casual, conversational tone and include emojis where appropriate.
 
----
+        ---
 
-FLOW:
+        FLOW:
 
-1. If the user mentions bidding, offering a price, or negotiating — ALWAYS respond by using the make_bid function call with the correct loadId and bidAmount. Do not just reply in text; use the provided function.
-2. If the user's message is vague (e.g. "that Dallas one", "urgent one"), try to match it to a load using city, urgency, or price.
-3. If unclear, ask the user: "Which load did you want to bid on? You can say the ID or city."
+        1. If the user mentions bidding, offering a price, or negotiating — ALWAYS respond by using the make_bid function call with the correct loadId and bidAmount. Do not just reply in text; use the provided function.
+        2. If the user's message is vague (e.g. "that Dallas one", "urgent one"), try to match it to a load using city, urgency, or price.
+        3. If unclear, ask the user: "Which load did you want to bid on? You can say the ID or city."
 
----
+        ---
 
-IMPORTANT:
-- When a bid is detected, ALWAYS use the make_bid function call. Do not only reply in text.
-- Your function call should include loadId, bidAmount, and a confirmation message for the user.
-- You may also include a friendly confirmation in your reply, but the function call is required for every bid.
+        IMPORTANT:
+        - When a bid is detected, ALWAYS use the make_bid function call. Do not only reply in text.
+        - Your function call should include loadId, bidAmount, and a confirmation message for the user.
+        - You may also include a friendly confirmation in your reply, but the function call is required for every bid.
 
----
+        ---
 
-AVAILABLE LOADS:
+        AVAILABLE LOADS:
 
-${formattedLoads}
-`
-
+        ${formattedLoads}
+        `
 
         const messages = [
             {
@@ -157,17 +179,10 @@ ${formattedLoads}
             functionName = toolCall.function.name;
             functionArgs = JSON.parse(toolCall.function.arguments);
         } 
-        else if (response.function_call) {
-            functionName = response.function_call.name;
-            functionArgs = JSON.parse(response.function_call.arguments);
-        }
-
-
-
-
-
+        
         
         if (functionName) {
+            
             // Always clean response.content before returning
             const cleanContent = response.content
                 ? response.content.replace(/function_call: \w+.*$/gi, '').trim()
@@ -179,13 +194,13 @@ ${formattedLoads}
                     action: {
                         type: functionName,
                         ...functionArgs,
-                        next: {
-                            type: 'navigate_to_screen',
-                            screen: 'Bids'
-                        }
                     }
                 }
             }
+
+
+
+            
 
             return {
                 text: cleanContent,
@@ -195,13 +210,6 @@ ${formattedLoads}
                 }
             };
         }
-
-
-
-
-
-
-
 
         return {
             text: response.content
@@ -215,6 +223,22 @@ ${formattedLoads}
         throw new Error('Failed to generate response');
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function getDefaultActionMessage(functionName, args) {
     switch (functionName) {

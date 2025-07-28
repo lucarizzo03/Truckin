@@ -165,66 +165,75 @@ app.post('/api/chat', async (req, res) => {
         }
 
         const safeMessage = typeof message === "string" ? message : "";
-       
-        // fetch context from MCP
-        let mcpResponse = await axios.post('http://localhost:3001/MCP/chat', {
-            mesasge: safeMessage,
-            history
-        }) 
 
-        console.log("past MCP response")
-
-        // the context
-        let mcpContext = mcpResponse.data
-
-        // if shouldRunRAG true, its runs it 
+        // 1. Optionally run RAG
         let relevantLoads = []
         if (shouldRunRAG(safeMessage)) {
             relevantLoads = await RAG(safeMessage)
         }
 
-        // 3. Pass relevantLoads + other context + other tools to LLM prompt
+        // 2. LLM call formulating
         const aiResponse = await generateChatResponse(
-            mcpContext.response.message || message,
-            mcpContext.response.history || history,
-            relevantLoads);
+            safeMessage, 
+            history, 
+            relevantLoads
+        );
 
+        let tooResult = null
+        let currBids = []
+        let bidRes = null
 
-        // If a bid was placed, save it to Supabase
-        let bidResult = null;
-        if (aiResponse.action && aiResponse.action.type === "make_bid") {
-            // You may want to get userId from req.body or session
-            const { loadId, bidAmount, confirmation } = aiResponse.action;
-            const userId = req.body.userId || null; // Adjust as needed
-            const { data: bidData, error: bidError } = await supabase
-                .from('bids')
-                .insert([
-                    {
-                        load_id: loadId,
-                        bid_amount: bidAmount,
-                        confirmation,
-                        user_id: userId,
-                        created_at: new Date().toISOString()
-                    }
-                ]);
-            if (bidError) {
-                console.error('Error saving bid:', bidError);
-                bidResult = { success: false, error: bidError.message };
-            } else {
-                bidResult = { success: true, bid: bidData };
+        // 3. If LLM tool call, call MCP
+        if (aiResponse.action && aiResponse.action.type) {
+
+            const mcpResponse = await axios.post('http://localhost:3001/MCP/chat', {
+                tool: aiResponse.action.type,
+                args: aiResponse.action
+            })
+
+            toolResult = mcpResponse.data
+
+            if (aiResponse.action.type == "make_bid") {
+                const { loadId, bidAmount, confirmation } = aiResponse.action;
+                const { data: bidData, error: bidError } = await supabase
+                    .from('bids')
+                    .insert([
+                        {
+                            load_id: loadId,
+                            bid_amount: bidAmount,
+                            confirmation,
+                            user_id: userId || null,
+                            created_at: new Date().toISOString()
+                        }
+                    ]);
+                if (bidError) {
+                    console.error('Error saving bid:', bidError);
+                    bidResult = { success: false, error: bidError.message };
+                } else {
+                    bidResult = { success: true, bid: bidData };
+                }
+                // Fetch all bids for this user (or all bids if userId not provided)
+                const { data: allBids, error: allBidsError } = await supabase
+                    .from('bids')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                if (!allBidsError && allBids) {
+                    bids = allBids;
+                }
             }
-        }
 
-        // Fetch all bids for this user (or all bids if userId not provided)
-        let bids = [];
-        if (aiResponse.action && aiResponse.action.type === "make_bid") {
-            const { data: allBids, error: allBidsError } = await supabase
-                .from('bids')
-                .select('*')
-                .order('created_at', { ascending: false });
-            if (!allBidsError && allBids) {
-                bids = allBids;
-            }
+
+            // more tool call actions ? 
+
+
+
+
+
+
+
+
+
+
         }
 
         res.json({
@@ -237,7 +246,8 @@ app.post('/api/chat', async (req, res) => {
             timestamp: new Date().toISOString()
         });
         
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Chat error:', error);
         res.status(500).json({ 
             success: false, 
