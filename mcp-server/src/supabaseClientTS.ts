@@ -13,7 +13,7 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 
 const supabase: SupabaseClient = createClient(
   SUPABASE_URL,
-  SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY
+  SUPABASE_SERVICE_ROLE_KEY
 );
 
 export { supabase };

@@ -1,33 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
+import React from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 
-const BidsScreen = ({ navigation, setCurrentLoad }) => {
-  const [bids, setBids] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchBids = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('http://localhost:2300/api/bids');
-      const data = await res.json();
-      if (data.success && Array.isArray(data.bids)) {
-        setBids(data.bids);
-      }
-    } catch (err) {
-      // handle error
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchBids();
-  }, []);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchBids().then(() => setRefreshing(false));
-  };
+const BidsScreen = ({ navigation, setCurrentLoad, bids, setBids }) => {
+  // Only use bids prop for live updates
+  const activeBids = bids.filter(bid => !bid.status || bid.status === 'active_bid');
 
   const acceptBid = (bid) => {
     setCurrentLoad && setCurrentLoad(bid);
@@ -35,25 +12,18 @@ const BidsScreen = ({ navigation, setCurrentLoad }) => {
     navigation.navigate('Home');
   };
 
-  // You may want to filter active bids differently depending on your schema
-  const activeBids = bids.filter(bid => !bid.status || bid.status === 'active_bid');
-
   return (
-    <ScrollView
-      contentContainerStyle={{ padding: 20 }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
+    <ScrollView contentContainerStyle={{ padding: 20 }}>
       <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 20 }}>Your Active Bids</Text>
-      {loading && <Text style={{ textAlign: 'center', marginTop: 40, color: '#888' }}>Loading bids...</Text>}
-      {!loading && activeBids.length === 0 && (
+      {activeBids.length === 0 && (
         <Text style={{ textAlign: 'center', marginTop: 40, color: '#888' }}>
           No active bids yet.
         </Text>
       )}
       {activeBids.map(bid => (
         <View key={bid.id || bid.load_id} style={styles.bidCard}>
-          <Text style={styles.bidTitle}>Load ID: {bid.load_id}</Text>
-          <Text style={styles.bidAmount}>Bid Amount: ${bid.bid_amount}</Text>
+          <Text style={styles.bidTitle}>Load ID: {bid.load_id || bid.id}</Text>
+          <Text style={styles.bidAmount}>Bid Amount: ${bid.bidAmount || bid.bid_amount}</Text>
           <Text style={{ marginBottom: 8 }}>{bid.confirmation}</Text>
           <TouchableOpacity style={styles.acceptButton} onPress={() => acceptBid(bid)}>
             <Text style={styles.acceptText}>Accept Bid</Text>

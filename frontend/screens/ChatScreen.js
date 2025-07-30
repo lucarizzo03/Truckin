@@ -226,7 +226,7 @@ const ChatScreen = ({ route, navigation, bids, setBids }) => {
     try {
       // Always fetch fresh loads before sending message to ensure AI has current data
       await fetchCurrentLoads();
-      
+
       const response = await fetch('http://localhost:2300/api/chat', {
         method: 'POST',
         headers: {
@@ -248,30 +248,59 @@ const ChatScreen = ({ route, navigation, bids, setBids }) => {
         if (typeof aiText === 'string') {
           aiText = aiText.replace(/function_call: \w+/gi, '').trim();
         }
+        // Always show the confirmation message for make_bid if present
+        let confirmationMessage = null;
+        if (result.action?.type === "make_bid" && result.action.confirmation) {
+          confirmationMessage = {
+            id: Date.now() + 2,
+            text: result.action.confirmation,
+            isUser: false,
+            timestamp: new Date()
+          };
+        }
         const aiMessage = {
           id: Date.now() + 1,
           text: aiText,
           isUser: false,
           timestamp: new Date()
         };
-        setMessages(prev => [...prev, aiMessage]);
+        setMessages(prev => confirmationMessage ? [...prev, aiMessage, confirmationMessage] : [...prev, aiMessage]);
 
-        // if action was make_bid
-        if (
-          result.action &&
-          result.action.type === "make_bid" &&
-          result.toolResult &&
-          result.toolResult.success &&
-          result.toolResult.bids
-        ) {
-          setBids(result.toolResult.bids);
-          navigation.navigate('BidsScreen');
+        // Debug: Log the action object
+        console.log('AI result.action:', result.action);
+
+        // Handle make_bid action (set bids and navigate)
+        if (result.action?.type === "make_bid") {
+          if (result.toolResult?.success && Array.isArray(result.toolResult.bids)) {
+            setBids([...result.toolResult.bids]); // force new array reference
+          } else {
+            // Fallback: always append the bid to the list using action data, force new array
+            setBids(prev => [
+              ...prev.map(bid => ({ ...bid })),
+              {
+                id: result.action.loadId,
+                pickup: result.action.pickup || 'Unknown',
+                delivery: result.action.delivery || 'Unknown',
+                bidAmount: result.action.bidAmount,
+                status: 'active_bid',
+              }
+            ]);
+          }
+          setTimeout(() => navigation.navigate('Bids'), 100);
         }
 
-        // Execute any actions
-        if (result.action) {
+        // Execute any actions except make_bid (already handled above)
+        if (result.action && result.action.type !== "make_bid") {
+          console.log('Executing action:', result.action);
           setTimeout(() => executeAction(result.action), 100);
         }
+
+        // Alert if no action was found
+        if (!result.action) {
+          Alert.alert('No action returned', 'The AI did not return an action.');
+        }
+      } else {
+        Alert.alert('Backend error', result.error || 'No success from backend.');
       }
     } catch (error) {
       console.error('Text message error:', error);

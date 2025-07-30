@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -149,6 +149,27 @@ export default function App() {
   };
   const [expenses, setExpenses] = useState([]);
   const [bids, setBids] = useState([])
+
+
+  // Fetch bids on app launch
+  useEffect(() => {
+    const fetchBids = async () => {
+      try {
+        const res = await fetch('http://localhost:2300/api/bids');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.bids)) {
+          setBids(data.bids);
+        }
+      } catch (err) {
+        // handle error
+      }
+    };
+    fetchBids();
+
+    // Optional: Poll every 5 seconds for real-time updates
+    const interval = setInterval(fetchBids, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
 
   return (

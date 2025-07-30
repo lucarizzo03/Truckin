@@ -8,6 +8,7 @@ const { supabase } = require('./supabaseClient');
 const { 
     generateChatResponse, 
     handleVoiceToChat, 
+    RAG
 } = require('./ai')
 const { OpenAI } = require('openai');
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -179,27 +180,27 @@ app.post('/api/chat', async (req, res) => {
             relevantLoads
         );
 
+        console.log(aiResponse)
+
        let toolResult = null
 
        // 3. If LLM tool call, call MCP
        if (aiResponse.action && aiResponse.action.type) {
-            const mcpArgs = { ...aiResponse.action, userId };
+            const mcpArgs = { ...aiResponse.action};
             const mcpResponse = await axios.post('http://localhost:3001/MCP/chat', {
                 tool: aiResponse.action.type,
                 args: mcpArgs
             });
             toolResult = mcpResponse.data;
+            console.log(mcpResponse)
         }
-        
 
         res.json({
             success: true,
             userMessage: message,
             aiResponse: aiResponse.text,
             action: aiResponse.action,
-            bids,
             toolResult,
-            bidResult,
             timestamp: new Date().toISOString()
         });
         

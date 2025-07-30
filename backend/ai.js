@@ -1,5 +1,6 @@
 const { OpenAI } = require('openai')
 const fs = require('fs')
+const { supabase } = require('./supabaseClient')
 
 // config
 const openai = new OpenAI({
@@ -74,7 +75,8 @@ async function generateChatResponse(userMessage, conversationHistory = [], curre
 
         1. If the user mentions bidding, offering a price, or negotiating — ALWAYS respond by using the make_bid function call with the correct loadId and bidAmount. Do not just reply in text; use the provided function.
         2. If the user's message is vague (e.g. "that Dallas one", "urgent one"), try to match it to a load using city, urgency, or price.
-        3. If unclear, ask the user: "Which load did you want to bid on? You can say the ID or city."
+        3. If the user specifies a load but not a bid amount, ask: "How much would you like to bid on load [ID]?"
+        4. If unclear which load, ask: "Which load did you want to bid on? You can say the ID or city."
 
         ---
 
@@ -108,6 +110,8 @@ async function generateChatResponse(userMessage, conversationHistory = [], curre
             temperature: 0.7,
             max_tokens: 500,
             functions: [
+
+
                 {
                     name: "make_bid",
                     description: "Bid on a specific load by ID",
@@ -130,6 +134,10 @@ async function generateChatResponse(userMessage, conversationHistory = [], curre
                         required: ["loadId", "bidAmount"]
                     }
                 },
+
+
+
+
                 {
                     name: "show_load_details",
                     description: "Display detailed information about specific loads",
@@ -145,6 +153,8 @@ async function generateChatResponse(userMessage, conversationHistory = [], curre
                         required: ["loadIds"]
                     }
                 }
+
+
             ],
             function_call: "auto"
         });
@@ -160,6 +170,10 @@ async function generateChatResponse(userMessage, conversationHistory = [], curre
             functionName = toolCall.function.name;
             functionArgs = JSON.parse(toolCall.function.arguments);
         } 
+        else if (response.function_call) {
+            functionName = response.function_call.name;
+            functionArgs = JSON.parse(response.function_call.arguments);
+        }
         
         
         if (functionName) {
@@ -279,6 +293,7 @@ async function RAG(safeMessage) {
         if (error) {
         console.error('Vector search error:', error);
         }
+
 
         return relevantLoads
     }
