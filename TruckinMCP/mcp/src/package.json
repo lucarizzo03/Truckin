@@ -1,0 +1,19 @@
+{
+  "name": "truckin-proxy",
+  "version": "1.0.0",
+  "description": "Proxy server for TruckinMCP",
+  "main": "proxy.cjs",
+  "scripts": {
+    "start": "node proxy.cjs",
+    "dev": "nodemon proxy.cjs"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "^1.6.0",
+    "xss": "^1.0.14",
+    "validator": "^13.11.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
