@@ -1,0 +1,10 @@
+{
+	"servers": {
+		"truckinmcp": {
+			"type": "stdio",
+			"command": "node",
+			"args": ["mcp/build/index.js"]
+		}
+	},
+	"inputs": []
+}
