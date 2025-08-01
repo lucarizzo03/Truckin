@@ -9,7 +9,7 @@ const crypto = require('crypto');
 const app = express();
 app.use(bodyParser.json());
 
-const mcp = spawn('node', ['build/index.js'], { cwd: '/Users/lucar/Desktop/AutoPilot/TruckinMCP/mcp' })
+const mcp = spawn('node', ['../build/index.js'])
 
 mcp.on('error', (err) => console.error('MCP process error:', err));
 mcp.on('exit', (code, signal) => console.log('MCP exited:', code, signal));
@@ -126,36 +126,26 @@ app.post('/chat', async (req, res) => {
     console.log('Sending to MCP:', jsonrpc);
 
     try {
-      const aiResponse = await axios.post("http://localhost:8000/pipe", {
-        messages: [{ role: "user", content: cleanMessage }],
-        prompt: systemPrompt
-      });
-
-      console.log('AI Response:', aiResponse.data);
+      // For now, since there's no AI service running on port 8000,
+      // let's just send the jsonrpc directly to MCP
       pendingRes = res;
-      sendMcpMessage(aiResponse.data);
+      sendMcpMessage(jsonrpc);
 
     } catch(aiError) {
-      console.error('AI API Error:', aiError.message);
+      console.error(aiError.message);
       res.status(500).json({ 
-        error: 'AI service unavailable', 
+        error: 'issue with LLM', 
         details: aiError.message 
       });
     }
   } catch(err) {
-    console.error('Chat endpoint error:', err);
-    res.status(500).json({ 
-      error: 'Internal server error', 
-      details: err.message 
-    });
+    console.error('chat endpoint not working:', err);
+    res.status(500).json({ details: err.message });
   }
 });
 
-
-
 app.listen(3001, () => {
   console.log('Proxy listening on http://localhost:3001');
-  console.log('Health check available at http://localhost:3001/health');
 });
 
 
