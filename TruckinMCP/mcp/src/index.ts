@@ -2,12 +2,9 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
-const NWS_API_BASE = "";
-const USER_AGENT = "";
-
 // Create server instance
 const server = new McpServer({
-  name: "weather",
+  name: "mcp",
   version: "1.0.0",
   capabilities: {
     resources: {},
@@ -16,9 +13,27 @@ const server = new McpServer({
 });
 
 
-
-
-
+// test tool
+server.tool(
+  "test",
+  "test tool",
+  {
+    message: z.string().optional().describe("Optional test message to echo back"),
+    number: z.number().optional().describe("Optional test number to echo back")
+  },
+  async ({ message, number }) => {
+    console.error("Test tool called with params:", { message, number });
+    
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Test tool executed successfully!\nReceived message: ${message || "none"}\nReceived number: ${number || "none"}\nTimestamp: ${new Date().toISOString()}`
+        }
+      ]
+    };
+  }
+);
 
 
 
