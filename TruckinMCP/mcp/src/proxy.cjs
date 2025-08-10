@@ -4,6 +4,8 @@ const bodyParser = require('body-parser');
 const axios = require('axios')
 const crypto = require('crypto'); 
 const { OpenAI } = require("openai")
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 const app = express();
 app.use(bodyParser.json());
