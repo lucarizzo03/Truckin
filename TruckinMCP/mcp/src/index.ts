@@ -1,6 +1,13 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import { OpenAI } from "openai";
+
+// init openai
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
+
 
 // Create server instance
 const server = new McpServer({
@@ -11,6 +18,48 @@ const server = new McpServer({
     tools: {},
   },
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // test tool
@@ -34,10 +83,6 @@ server.tool(
     };
   }
 );
-
-
-
-
 
 
 async function main() {

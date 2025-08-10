@@ -3,6 +3,7 @@ const { spawn } = require('child_process');
 const bodyParser = require('body-parser');
 const axios = require('axios')
 const crypto = require('crypto'); 
+const { OpenAI } = require("openai")
 
 const app = express();
 app.use(bodyParser.json());
@@ -14,6 +15,11 @@ let contentLength = null;
 let mcpInitialized = false;
 
 const mcp = spawn('node', ['../build/index.js'])
+
+// openai config
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 // call this after connecting to MCP
 async function discoverTools() {
@@ -179,8 +185,14 @@ function enrichMetaData(cleanMessage, userContext) {
       message: cleanMessage,
       user_id: userContext.user_id || "anonymous",
       session_id: userContext.session_id || "unknown-session",
-      timestamp: new Date().toISOString(),
-      permissions: userContext.permissions || ["basic_chat"],
+      timestamp: new Date().toISOString()
+
+      // eventually conversation tracking
+      // client context
+
+      // add other meta data for tracking
+
+
     },
     id: crypto.randomUUID(), // stable, unique per call
   };
@@ -199,10 +211,16 @@ Available tools:
 EXAMPLES:
 
 Input: {"jsonrpc":"2.0","method":"parse_content","params":{"message":"test"},"id":"123"}
-Output: {"jsonrpc":"2.0","method":"test","params":{},"id":"123"}
+Output: {"jsonrpc":"2.0","method":"tools/call","params":{"name":"test","arguments":{}},"id":"123"}
 
-CRITICAL: You must correctly identify when to use the tool tool. When in doubt, use ping.
-RITICAL: You must preserve the original ID from the input request.
+Input: {"jsonrpc":"2.0","method":"parse_content","params":{"message":"hello there"},"id":"456"}
+Output: {"jsonrpc":"2.0","method":"tools/call","params":{"name":"test","arguments":{}},"id":"456"}
+
+CRITICAL RULES:
+1. You MUST use the correct format: method MUST be "tools/call" and params MUST have "name" and "arguments" fields
+2. You MUST preserve the original ID from the input request
+3. For messages containing "ping", "test", or "hello", use the "test" tool
+4. When in doubt, use the "test" tool
 `;
 
 
@@ -228,27 +246,23 @@ app.post('/chat', async (req, res) => {
 
   try {
 
+    // calling LLM for tool identification
     console.log('CALLING LLM');
-    const promptWithInput = systemPrompt.replace(
-      '{input_json_here}', 
-      JSON.stringify(jsonrpc, null, 2)
-    );
-
-    const aiResponse = await axios.post("", {
+    const aiResponse = await openai.chat.completions.create({
+      model: "gpt-4o",
       messages: [
         { role: "system", content: "You are a JSON-RPC router. Respond ONLY with valid JSON objects. No explanations." },
-        { role: "user", content: promptWithInput}
-
+        { role: "user", content: systemPrompt }
       ],
       temperature: 0,
       max_tokens: 200
-    })
-
+    });
     console.log('LLM RESPONSE RECEIVED');
+
 
     let rpcResponse;
     try {
-      const responseText = aiResponse.data.response;
+      const responseText = aiResponse.choices[0].message.content;
       
       // Try to extract JSON from response
       const jsonMatch = responseText.match(/\{.*\}/s);
@@ -264,27 +278,12 @@ app.post('/chat', async (req, res) => {
             rpcResponse.id = jsonrpc.id; // Replace with original UUID
         }
 
-
-        // Add this code to transform the request to the proper format:
-        if (rpcResponse.method === "test") {
-            console.log("Converting to proper tools/call format");
-            rpcResponse = {
-                jsonrpc: "2.0",
-                id: rpcResponse.id,
-                method: "tools/call",
-                params: {
-                    name: "test",
-                    arguments: {}
-                }
-            };
-        }
-
-
-      } else {
+      } 
+      else {
         throw new Error("No JSON found in LLM response");
       }
       
-      // Validate JSON-RPC structure
+      // Validate JSON-RPC structure -> checking the metadata 
       if (!rpcResponse.jsonrpc || !rpcResponse.method || !rpcResponse.id) {
         throw new Error("Invalid JSON-RPC structure");
       }
@@ -308,6 +307,7 @@ app.post('/chat', async (req, res) => {
 
     pendingRes = res;
     sendMcpMessage(rpcResponse);
+
 
     // Add timeout for MCP response
     setTimeout(() => {

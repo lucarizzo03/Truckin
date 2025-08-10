@@ -64,7 +64,8 @@ async function generateChatResponse(userMessage, conversationHistory = [], curre
         );
         const safeLoads = Array.isArray(currentLoads) ? currentLoads.slice(0, 12) : [];
         const formattedLoads = formatLoadsForPrompt(safeLoads);
-        const systemPrompt = `
+        const systemPrompt = 
+        `
         You are AutoPilot, a friendly and helpful AI assistant for truckers using a load-booking app.
 
         Your job is to help drivers negotiate and place bids using natural language. Respond in a casual, conversational tone and include emojis where appropriate.
@@ -278,6 +279,7 @@ async function handleVoiceToChat(audioFilePath) {
 // calls RAG 
 async function RAG(safeMessage) {
     try {
+
         // 1. Embed the user message
         const { data: embedData } = await openai.embeddings.create({
         model: "text-embedding-3-small",
@@ -287,13 +289,12 @@ async function RAG(safeMessage) {
 
         // 2. Query Supabase for top 5 similar loads
         const { data: relevantLoads, error } = await supabase.rpc('match_loads', {
-        query_embedding: userEmbedding,
-        match_count: 5
+            query_embedding: userEmbedding,
+            match_count: 5
         });
         if (error) {
         console.error('Vector search error:', error);
         }
-
 
         return relevantLoads
     }

@@ -3,6 +3,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const mcp_js_1 = require("@modelcontextprotocol/sdk/server/mcp.js");
 const stdio_js_1 = require("@modelcontextprotocol/sdk/server/stdio.js");
 const zod_1 = require("zod");
+const openai_1 = require("openai");
+// init openai
+const openai = new openai_1.OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+});
 // Create server instance
 const server = new mcp_js_1.McpServer({
     name: "mcp",

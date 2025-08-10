@@ -150,6 +150,12 @@ app.post('/api/voice-to-chat', upload.single('audio'), async (req, res) => {
 });
 
 
+
+
+
+
+
+
 // Enhanced chat endpoint with load context
 app.post('/api/chat', async (req, res) => {
     console.log("CHAT ENDPOINT")
@@ -213,6 +219,16 @@ app.post('/api/chat', async (req, res) => {
         });
     }
 });
+
+
+
+
+
+
+
+
+
+
 
 
 
