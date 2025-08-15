@@ -4,6 +4,7 @@ const mcp_js_1 = require("@modelcontextprotocol/sdk/server/mcp.js");
 const stdio_js_1 = require("@modelcontextprotocol/sdk/server/stdio.js");
 const zod_1 = require("zod");
 const openai_1 = require("openai");
+const mcpSupabase_js_1 = require("./mcpSupabase.js");
 // init openai
 const openai = new openai_1.OpenAI({
     apiKey: process.env.OPENAI_API_KEY
@@ -16,6 +17,32 @@ const server = new mcp_js_1.McpServer({
         resources: {},
         tools: {},
     },
+});
+// RAG pipeline
+server.tool("RAG", "Tool that calls RAG pipeline to pull whatever info is asked via the user message", {
+    message: zod_1.z.string().describe("the user inputted message that is broken down using RAG")
+}, async ({ message }) => {
+    console.error("RAG CALLED");
+    try {
+        // 1. embed message
+        const { data: embedData } = await openai.embeddings.create({
+            model: "text-embedding-3-small",
+            input: message
+        });
+        const userEmbedding = embedData[0].embedding;
+        // 2. Query Supabase for top 5 similar loads
+        const { data: relevantLoads, error } = await mcpSupabase_js_1.supabase.rpc('match_loads', {
+            query_embedding: userEmbedding,
+            match_count: 5
+        });
+        if (error) {
+            console.error('Vector search error:', error);
+        }
+        return relevantLoads;
+    }
+    catch (err) {
+        throw console.error("RAG doesnt work", err);
+    }
 });
 // test tool
 server.tool("test", "test tool", {

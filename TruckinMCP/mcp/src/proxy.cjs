@@ -13,7 +13,6 @@ app.use(bodyParser.json());
 // Declare MCP state variables first
 let pendingRes = null;
 let buffer = '';
-let contentLength = null;
 let mcpInitialized = false;
 
 const mcp = spawn('node', ['../build/index.js'])
@@ -331,7 +330,6 @@ app.post('/chat', async (req, res) => {
 
 // to rebuilt typescript -> npx tsc
 // to run server -> node src/node.cjs
-
 app.listen(3001, () => {
   console.log('Proxy listening on http://localhost:3001');
 });
