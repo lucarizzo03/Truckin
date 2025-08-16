@@ -44,7 +44,7 @@ server.tool("RAG", "Tool that calls RAG pipeline to pull whatever info is asked 
         }
         const hits = Array.isArray(relevantLoads) ? relevantLoads : [];
         // derive ids and optionally fetch full rows
-        const ids = hits.map((h) => h.id ?? h.load_id ?? h.metadata?.id ?? h.payload?.id).filter(Boolean);
+        const ids = hits.map((h) => h.id ?? h.metadata?.id ?? h.load_id).filter(Boolean);
         console.error("derived ids from RPC hits:", ids);
         let rows = [];
         if (ids.length) {
@@ -62,7 +62,7 @@ server.tool("RAG", "Tool that calls RAG pipeline to pull whatever info is asked 
             ? `Found ${loads.length} loads:\n` +
                 loads
                     .map((l, idx) => {
-                    const meta = l.metadata;
+                    const meta = l.metadata ?? {};
                     const id = meta.id ?? `(load-${idx + 1})`;
                     const pay = meta.pay ?? "(no pay)";
                     const broker = meta.broker ?? "(no broker)";

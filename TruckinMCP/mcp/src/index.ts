@@ -55,7 +55,7 @@ server.tool(
       const hits = Array.isArray(relevantLoads) ? relevantLoads : [];
 
       // derive ids and optionally fetch full rows
-      const ids = hits.map((h: any) => h.id ?? h.load_id ?? h.metadata?.id ?? h.payload?.id).filter(Boolean);
+      const ids = hits.map((h: any) => h.id ?? h.metadata?.id ?? h.load_id).filter(Boolean);
       console.error("derived ids from RPC hits:", ids);
 
       let rows: any[] = [];
@@ -75,7 +75,7 @@ server.tool(
         ? `Found ${loads.length} loads:\n` +
           loads
             .map((l: any, idx: number) => {
-              const meta = l.metadata;
+              const meta = l.metadata ?? {};
               const id = meta.id ?? `(load-${idx + 1})`;
               const pay = meta.pay ?? "(no pay)";
               const broker = meta.broker ?? "(no broker)";
@@ -99,7 +99,6 @@ server.tool(
     }
   }
 );
-
 
 // test tool
 server.tool(

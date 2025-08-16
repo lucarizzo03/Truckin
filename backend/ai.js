@@ -276,33 +276,6 @@ async function handleVoiceToChat(audioFilePath) {
 
 
 
-// calls RAG 
-async function RAG(safeMessage) {
-    try {
-
-        // 1. Embed the user message
-        const { data: embedData } = await openai.embeddings.create({
-        model: "text-embedding-3-small",
-        input: safeMessage
-        });
-        const userEmbedding = embedData[0].embedding;
-
-        // 2. Query Supabase for top 5 similar loads
-        const { data: relevantLoads, error } = await supabase.rpc('match_loads', {
-            query_embedding: userEmbedding,
-            match_count: 5
-        });
-        if (error) {
-        console.error('Vector search error:', error);
-        }
-
-        return relevantLoads
-    }
-    catch (err) {
-        return console.error('Something wrong with RAG', err)
-    }
-}
-
 
 
 
