@@ -174,6 +174,8 @@ const ChatScreen = ({ route, navigation, bids, setBids }) => {
       case 'show_load_details':
         showLoadDetails(action.loadIds);
         break;
+
+        
       case 'make_bid':
         const load = loads.find(l => String(l.id) === String(action.loadId));
 

@@ -3,6 +3,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { OpenAI } from "openai";
 import { supabase } from "./mcpSupabase.js"
+import { pick } from "zod/v4-mini";
 
 // init openai
 const openai = new OpenAI({
@@ -19,6 +20,98 @@ const server = new McpServer({
     tools: {},
   },
 });
+
+
+// places bids tool
+server.tool(
+  "place_bid",
+  "Tool places bid a specific load",
+  {
+    LOADID: z.string().describe("The ID of the load to bid on"),
+    AMOUNT: z.number().describe("The bid amount in USD")
+  },
+  async ({ LOADID, AMOUNT }) => {
+
+    try {
+
+      // get load
+      const { data: bidLoad, error } = await supabase
+      .from('loads')
+      .select('*')
+      .eq('load_id', LOADID)
+      .single()
+
+      if (error) {
+        console.error("ISSUE 1")
+      }
+
+      if (!bidLoad) {
+        console.error("ISSUE 2")
+      }
+
+      const loadMeta = bidLoad.metadata || {}
+      const pickup = loadMeta.pickup || 'unkown'
+      const delivery = loadMeta.delivery || 'unknown'
+      const pay = loadMeta.pay || 'unknown'
+
+      // making new bid
+      const { data: newBid, error: bidError } = await supabase
+          .from('bids')
+          .insert({
+            load_id: LOADID,
+            bid_amount: AMOUNT,
+            status: 'active_bid',
+            created_at: new Date().toISOString(),
+            pickup: pickup,
+            delivery: delivery,
+            load_pay: pay,
+            confirmation: `Bid placed for $${AMOUNT} on load ${LOADID}`
+          })
+          .select()
+          .single();
+        
+      if (bidError) {
+        console.error('error bid')
+      }
+
+      if (!newBid) {
+        console.error("bid did not make")
+      }
+
+      const response = {
+          success: true,
+          bid: newBid,
+          load: {
+            id: LOADID,
+            pickup: pickup,
+            delivery: delivery,
+            pay: pay,
+            broker: loadMeta.broker || 'Unknown broker',
+            distance: loadMeta.distance || 'Unknown distance',
+            equipment: loadMeta.equipment || 'Unknown equipment'
+          },
+          message: `Successfully placed bid of $${AMOUNT} on load ${LOADID} (${pickup} → ${delivery})`
+        };
+
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(response)
+          }]
+        };
+
+      }
+      catch(err) {
+        console.error("place_bid tool error:", err);
+        return {
+          content: [{
+            type: "text",
+            text: `Bid placement error: ${String(err)}`
+          }]
+        };
+      }
+    }
+);
 
 
 // RAG pipeline

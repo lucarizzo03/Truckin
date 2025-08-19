@@ -85,13 +85,6 @@ const upload = multer({
     limits: { fileSize: 25 * 1024 * 1024 } // 25MB limit (Whisper limit)
 });
 
-// tells it if it should run RAG depending on key words
-function shouldRunRAG(message) {
-    if (typeof message !== "string") return false;
-    // Simple keyword-based intent detection
-    const keywords = ["load", "loads", "available", "find", "search", "route", "pickup", "delivery"];
-    return keywords.some(kw => message.toLowerCase().includes(kw));
-}
 
 // AI Endpoints
 
