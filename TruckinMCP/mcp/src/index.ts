@@ -23,17 +23,17 @@ const server = new McpServer({
 
 
 // places bids tool
+// ...existing code...
+// places bids tool
 server.tool(
-  "place_bid",
+  "BID",
   "Tool places bid a specific load",
   {
     LOADID: z.string().describe("The ID of the load to bid on"),
     AMOUNT: z.number().describe("The bid amount in USD")
   },
   async ({ LOADID, AMOUNT }) => {
-
     try {
-
       // get load
       const { data: bidLoad, error } = await supabase
       .from('loads')
@@ -43,14 +43,26 @@ server.tool(
 
       if (error) {
         console.error("ISSUE 1")
+        return {
+          content: [{
+            type: "text",
+            text: `Error fetching load: ${String(error)}`
+          }]
+        };
       }
 
       if (!bidLoad) {
         console.error("ISSUE 2")
+        return {
+          content: [{
+            type: "text",
+            text: `Load ${LOADID} not found`
+          }]
+        };
       }
 
       const loadMeta = bidLoad.metadata || {}
-      const pickup = loadMeta.pickup || 'unkown'
+      const pickup = loadMeta.pickup || 'unknown'
       const delivery = loadMeta.delivery || 'unknown'
       const pay = loadMeta.pay || 'unknown'
 
@@ -60,22 +72,31 @@ server.tool(
           .insert({
             load_id: LOADID,
             bid_amount: AMOUNT,
-            status: 'active_bid',
-            created_at: new Date().toISOString(),
-            pickup: pickup,
-            delivery: delivery,
-            load_pay: pay,
             confirmation: `Bid placed for $${AMOUNT} on load ${LOADID}`
           })
           .select()
           .single();
         
       if (bidError) {
-        console.error('error bid')
+        console.error('Bid error details:', bidError);
+        console.error('Bid error stringified:', JSON.stringify(bidError, null, 2));
+        return {
+          content: [{
+            type: "text",
+            text: `Error creating bid: ${bidError.message || bidError.details || JSON.stringify(bidError)}`
+          }]
+        };
       }
+
 
       if (!newBid) {
         console.error("bid did not make")
+        return {
+          content: [{
+            type: "text",
+            text: "Bid creation failed"
+          }]
+        };
       }
 
       const response = {
@@ -100,17 +121,16 @@ server.tool(
           }]
         };
 
-      }
-      catch(err) {
-        console.error("place_bid tool error:", err);
-        return {
-          content: [{
-            type: "text",
-            text: `Bid placement error: ${String(err)}`
-          }]
-        };
-      }
+    } catch(err) {
+      console.error("place_bid tool error:", err);
+      return {
+        content: [{
+          type: "text",
+          text: `Bid placement error: ${String(err)}`
+        }]
+      };
     }
+  }
 );
 
 

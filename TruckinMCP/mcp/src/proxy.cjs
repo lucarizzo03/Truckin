@@ -207,21 +207,36 @@ INPUT: A JSON-RPC request object
 OUTPUT: A JSON-RPC response object (NO other text)
 
 Available tools:
-- "test" (no params) - ALWAYS use this for messages containing "ping", "test", "hello"
+- "test" (message?: string, number?: number) - Use for messages containing "ping", "test", "hello"
+- "RAG" (message: string) - Use for searching loads, finding loads, load queries, or general load information requests
+- "BID" (LOADID: string, AMOUNT: number) - Use for placing bids on specific loads
 
 EXAMPLES:
 
 Input: {"jsonrpc":"2.0","method":"parse_content","params":{"message":"test"},"id":"123"}
 Output: {"jsonrpc":"2.0","method":"tools/call","params":{"name":"test","arguments":{}},"id":"123"}
 
-Input: {"jsonrpc":"2.0","method":"parse_content","params":{"message":"hello there"},"id":"456"}
-Output: {"jsonrpc":"2.0","method":"tools/call","params":{"name":"test","arguments":{}},"id":"456"}
+Input: {"jsonrpc":"2.0","method":"parse_content","params":{"message":"show me loads from Chicago to Dallas"},"id":"456"}
+Output: {"jsonrpc":"2.0","method":"tools/call","params":{"name":"RAG","arguments":{"message":"show me loads from Chicago to Dallas"}},"id":"456"}
+
+Input: {"jsonrpc":"2.0","method":"parse_content","params":{"message":"find high paying loads"},"id":"789"}
+Output: {"jsonrpc":"2.0","method":"tools/call","params":{"name":"RAG","arguments":{"message":"find high paying loads"}},"id":"789"}
+
+Input: {"jsonrpc":"2.0","method":"parse_content","params":{"message":"place bid on L009 for 1500"},"id":"101"}
+Output: {"jsonrpc":"2.0","method":"tools/call","params":{"name":"BID","arguments":{"LOADID":"L009","AMOUNT":1500}},"id":"101"}
+
+Input: {"jsonrpc":"2.0","method":"parse_content","params":{"message":"bid $2000 on load L017"},"id":"102"}
+Output: {"jsonrpc":"2.0","method":"tools/call","params":{"name":"BID","arguments":{"LOADID":"L017","AMOUNT":2000}},"id":"102"}
 
 CRITICAL RULES:
 1. You MUST use the correct format: method MUST be "tools/call" and params MUST have "name" and "arguments" fields
 2. You MUST preserve the original ID from the input request
 3. For messages containing "ping", "test", or "hello", use the "test" tool
-4. When in doubt, use the "test" tool
+4. For messages about searching, finding, showing, or querying loads, use the "RAG" tool
+5. For messages about bidding, placing bids, or load bidding, use the "BID" tool
+6. Extract LOADID (like "L009", "L017") and AMOUNT (numeric value) from bid messages
+7. Pass the entire user message to RAG tool for load searches
+8. When in doubt, use the "RAG" tool for load-related queries or "test" tool for general testing
 `;
 
 
@@ -329,7 +344,7 @@ app.post('/chat', async (req, res) => {
 });
 
 // to rebuilt typescript -> npx tsc
-// to run server -> node src/node.cjs
+// to run server -> node src/node proxy.cjs
 app.listen(3001, () => {
   console.log('Proxy listening on http://localhost:3001');
 });

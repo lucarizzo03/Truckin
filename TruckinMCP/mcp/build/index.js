@@ -18,6 +18,102 @@ const server = new mcp_js_1.McpServer({
         tools: {},
     },
 });
+// places bids tool
+// ...existing code...
+// places bids tool
+server.tool("BID", "Tool places bid a specific load", {
+    LOADID: zod_1.z.string().describe("The ID of the load to bid on"),
+    AMOUNT: zod_1.z.number().describe("The bid amount in USD")
+}, async ({ LOADID, AMOUNT }) => {
+    try {
+        // get load
+        const { data: bidLoad, error } = await mcpSupabase_js_1.supabase
+            .from('loads')
+            .select('*')
+            .eq('load_id', LOADID)
+            .single();
+        if (error) {
+            console.error("ISSUE 1");
+            return {
+                content: [{
+                        type: "text",
+                        text: `Error fetching load: ${String(error)}`
+                    }]
+            };
+        }
+        if (!bidLoad) {
+            console.error("ISSUE 2");
+            return {
+                content: [{
+                        type: "text",
+                        text: `Load ${LOADID} not found`
+                    }]
+            };
+        }
+        const loadMeta = bidLoad.metadata || {};
+        const pickup = loadMeta.pickup || 'unknown';
+        const delivery = loadMeta.delivery || 'unknown';
+        const pay = loadMeta.pay || 'unknown';
+        // making new bid
+        const { data: newBid, error: bidError } = await mcpSupabase_js_1.supabase
+            .from('bids')
+            .insert({
+            load_id: LOADID,
+            bid_amount: AMOUNT,
+            confirmation: `Bid placed for $${AMOUNT} on load ${LOADID}`
+        })
+            .select()
+            .single();
+        if (bidError) {
+            console.error('Bid error details:', bidError);
+            console.error('Bid error stringified:', JSON.stringify(bidError, null, 2));
+            return {
+                content: [{
+                        type: "text",
+                        text: `Error creating bid: ${bidError.message || bidError.details || JSON.stringify(bidError)}`
+                    }]
+            };
+        }
+        if (!newBid) {
+            console.error("bid did not make");
+            return {
+                content: [{
+                        type: "text",
+                        text: "Bid creation failed"
+                    }]
+            };
+        }
+        const response = {
+            success: true,
+            bid: newBid,
+            load: {
+                id: LOADID,
+                pickup: pickup,
+                delivery: delivery,
+                pay: pay,
+                broker: loadMeta.broker || 'Unknown broker',
+                distance: loadMeta.distance || 'Unknown distance',
+                equipment: loadMeta.equipment || 'Unknown equipment'
+            },
+            message: `Successfully placed bid of $${AMOUNT} on load ${LOADID} (${pickup} → ${delivery})`
+        };
+        return {
+            content: [{
+                    type: "text",
+                    text: JSON.stringify(response)
+                }]
+        };
+    }
+    catch (err) {
+        console.error("place_bid tool error:", err);
+        return {
+            content: [{
+                    type: "text",
+                    text: `Bid placement error: ${String(err)}`
+                }]
+        };
+    }
+});
 // RAG pipeline
 server.tool("RAG", "Tool that calls RAG pipeline to pull whatever info is asked via the user message", {
     message: zod_1.z.string().describe("the user inputted message that is broken down using RAG")
