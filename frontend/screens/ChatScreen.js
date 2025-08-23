@@ -12,29 +12,35 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 
-const ChatScreen = ({ route, navigation, bids, setBids }) => {
+const ChatScreen = ({ route, navigation }) => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [currentLoads, setCurrentLoads] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
   const [recording, setRecording] = useState(null);
   const scrollViewRef = useRef();
 
+  /*
   // Fetch current loads when component mounts
   useEffect(() => {
     fetchCurrentLoads();
   }, []);
+  */
 
   // Handle voice message from HomeScreen
+    /*
   useEffect(() => {
+
+  
     if (route.params?.voiceMessageUri) {
       handleVoiceMessage(route.params.voiceMessageUri);
       // Clear the parameter to prevent re-processing
       navigation.setParams({ voiceMessageUri: null });
     }
   }, [route.params?.voiceMessageUri]);
+  */
 
+  /*
   const fetchCurrentLoads = async () => {
     try {
       const response = await fetch('http://localhost:2300/api/loads');
@@ -49,6 +55,7 @@ const ChatScreen = ({ route, navigation, bids, setBids }) => {
       console.error('Failed to fetch loads:', error);
     }
   };
+  */
 
   const startRecording = async () => {
     try {
@@ -91,6 +98,9 @@ const ChatScreen = ({ route, navigation, bids, setBids }) => {
     }
   };
 
+
+
+  /*
   const handleVoiceMessage = async (audioUri) => {
     try {
       setIsLoading(true);
@@ -165,51 +175,11 @@ const ChatScreen = ({ route, navigation, bids, setBids }) => {
     }
   };
 
-  const executeAction = async (action) => {
-    const loads = await fetchCurrentLoads()
-    switch (action.type) {
-      case 'navigate_to_screen':
-        navigation.navigate(action.screen, action.params);
-        break;
-      case 'show_load_details':
-        showLoadDetails(action.loadIds);
-        break;
+  */
 
-        
-      case 'make_bid':
-        const load = loads.find(l => String(l.id) === String(action.loadId));
+  
 
 
-        // console.log('Bid Action:', action);
-        // console.log('Matched Load:', load);
-
-       
-        
-        setBids(prev => [
-          ...prev,
-          {
-            id: load ? load.id : action.loadId, 
-            pickup: load ? load.pickup : action.pickup || 'Unknown',
-            delivery: load ? load.delivery : action.delivery || 'Unknown',
-            bidAmount: action.bidAmount,
-            status: 'active_bid',
-          }
-        ]);
-
-        Alert.alert(
-          'Bid placed!',
-          `Bid for $${action.bidAmount} on load ${load ? load.id : action.loadId} sent to Bids screen.`
-        );
-
-        if (action.next && action.next.type === 'navigate_to_screen') {
-          navigation.navigate(action.next.screen);
-        }
-        break;
-
-      default:
-        console.log('Unknown action:', action);
-    }
-  };
 
   const sendTextMessage = async () => {
     if (!inputText.trim()) return;
@@ -222,14 +192,16 @@ const ChatScreen = ({ route, navigation, bids, setBids }) => {
     };
 
     setMessages(prev => [...prev, userMessage]);
-    setInputText('');
-    setIsLoading(true);
+    setInputText('')
+    setIsLoading(true)
 
     try {
-      // Always fetch fresh loads before sending message to ensure AI has current data
-      await fetchCurrentLoads();
+      
+      // 
+      // await fetchCurrentLoads();
 
-      const response = await fetch('http://localhost:2300/api/chat', {
+      // get response from MCP
+      const response = await fetch('http://localhost:3001/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -243,74 +215,45 @@ const ChatScreen = ({ route, navigation, bids, setBids }) => {
         })
       });
 
-      const result = await response.json();
-
-      if (result.success) {
-        let aiText = result.aiResponse;
-        if (typeof aiText === 'string') {
-          aiText = aiText.replace(/function_call: \w+/gi, '').trim();
-        }
-        // Always show the confirmation message for make_bid if present
-        let confirmationMessage = null;
-        if (result.action?.type === "make_bid" && result.action.confirmation) {
-          confirmationMessage = {
-            id: Date.now() + 2,
-            text: result.action.confirmation,
-            isUser: false,
-            timestamp: new Date()
-          };
-        }
-        const aiMessage = {
-          id: Date.now() + 1,
-          text: aiText,
-          isUser: false,
-          timestamp: new Date()
-        };
-        setMessages(prev => confirmationMessage ? [...prev, aiMessage, confirmationMessage] : [...prev, aiMessage]);
-
-        // Debug: Log the action object
-        console.log('AI result.action:', result.action);
-
-        // Handle make_bid action (set bids and navigate)
-        if (result.action?.type === "make_bid") {
-          if (result.toolResult?.success && Array.isArray(result.toolResult.bids)) {
-            setBids([...result.toolResult.bids]); // force new array reference
-          } else {
-            // Fallback: always append the bid to the list using action data, force new array
-            setBids(prev => [
-              ...prev.map(bid => ({ ...bid })),
-              {
-                id: result.action.loadId,
-                pickup: result.action.pickup || 'Unknown',
-                delivery: result.action.delivery || 'Unknown',
-                bidAmount: result.action.bidAmount,
-                status: 'active_bid',
-              }
-            ]);
-          }
-          setTimeout(() => navigation.navigate('Bids'), 100);
-        }
-
-        // Execute any actions except make_bid (already handled above)
-        if (result.action && result.action.type !== "make_bid") {
-          console.log('Executing action:', result.action);
-          setTimeout(() => executeAction(result.action), 100);
-        }
-
-        // Alert if no action was found
-        if (!result.action) {
-          Alert.alert('No action returned', 'The AI did not return an action.');
-        }
-      } else {
-        Alert.alert('Backend error', result.error || 'No success from backend.');
+      if (!response.ok) {
+        throw new Error("something wrong w response")
       }
-    } catch (error) {
-      console.error('Text message error:', error);
-      Alert.alert('Error', 'Failed to send message');
-    } finally {
-      setIsLoading(false);
+
+      const result = await response.json();
+      console.log(result)
+
+      if (result && result.message) {
+        const aiMessage = {
+        id: Date.now() + 1,
+        text: result.message,
+        isUser: false,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, aiMessage]);
+      } 
+      else {
+        throw new Error('Invalid response format');
+      }
+    }
+    catch(err) {
+      throw new Error("something wrong chat screen", err)
+    }
+    finally {
+      setIsLoading(false)
     }
   };
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   return (

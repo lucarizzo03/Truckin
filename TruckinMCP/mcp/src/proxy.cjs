@@ -65,75 +65,79 @@ mcp.stderr.on('data', (data) => console.error('MCP stderr:', data.toString()));
 mcp.stdout.setEncoding('utf8');
 mcp.stderr.setEncoding('utf8');
 
-
-mcp.stdout.on('data', (chunk) => {
-  console.log('MCP stdout:', chunk);
-  buffer += chunk;
+mcp.stdout.on('data', (data) => {
+  const rawData = data.toString();
   
-  // Process newline-delimited messages
-  const messages = buffer.split('\n');
-  // Keep the last part in buffer if it doesn't end with newline
-  buffer = messages.pop() || '';
+  // Skip dotenv messages and other non-JSON output
+  if (rawData.includes('[dotenv@') || rawData.includes('injecting env') || rawData.includes('tip:')) {
+    console.log('Skipping dotenv output:', rawData);
+    return;
+  }
   
-  // Process each complete message
-  for (const message of messages) {
-    if (!message.trim()) continue; // Skip empty lines
+  // Skip empty or whitespace-only data
+  if (!rawData.trim()) {
+    return;
+  }
+  
+  try {
+    const response = JSON.parse(rawData);
+    console.log('=== MCP RESPONSE ===', response);
     
-    try {
-      const response = JSON.parse(message);
-      console.log('=== MCP RESPONSE ===', response);
+    // Handle the response content properly
+    if (response.result && response.result.content) {
+      const content = response.result.content[0];
       
-      // Handle response if we have a pending HTTP response waiting
-      if (pendingRes) {
-        if (response.result) {
-          // Handle successful tool call responses
-          if (response.result.content && response.result.content.length > 0) {
-            // If this is a tools/call response with content
-            try {
-              // Try to parse the content if it's JSON text
-              const contentText = response.result.content[0]?.text;
-              if (contentText) {
-                const parsedContent = JSON.parse(contentText);
-                // Return a cleaner response with the parsed content
-                pendingRes.json({
-                  jsonrpc: "2.0",
-                  result: parsedContent,
-                  id: response.id
-                });
-              } else {
-                // Just use the content field directly if there's no text property
-                pendingRes.json(response);
-              }
-            } catch (e) {
-              // If parsing fails, return the original response
-              console.log('Failed to parse content text:', e);
-              pendingRes.json(response);
-            }
-          } else if (response.result.tools) {
-            // This is a tools/list response, pass it through
-            pendingRes.json(response);
-          } else {
-            // Other successful responses
-            pendingRes.json(response);
-          }
-        } else if (response.error) {
-          // For error responses, pass through
-          pendingRes.json(response);
-        } else {
-          // For any other response type, pass through
-          pendingRes.json(response);
-        }
+      // Check if content is text type (not JSON)
+      if (content.type === 'text') {
+        // Don't parse as JSON, just use the text directly
+        const messageText = content.text;
+        console.log('MCP Tool Response:', messageText);
         
-        // Clear the pending response after handling
+        // Send back to frontend using pendingRes
+        if (pendingRes) {
+          pendingRes.json({ 
+            message: messageText,
+            success: true 
+          });
+          pendingRes = null;
+        }
+      } else {
+        // Handle other content types
+        if (pendingRes) {
+          pendingRes.json({ 
+            message: "Tool executed successfully",
+            success: true,
+            data: content 
+          });
+          pendingRes = null;
+        }
+      }
+    } else {
+      // Fallback for other response types
+      if (pendingRes) {
+        pendingRes.json({ 
+          message: response.result || "Command executed",
+          success: true 
+        });
         pendingRes = null;
       }
-    } 
-    catch (e) {
-      console.error('Failed to parse MCP response:', e);
+    }
+    
+  } catch (parseError) {
+    console.error('Failed to parse MCP response:', parseError.message);
+    console.log('Raw response:', rawData);
+    
+    // Only try to respond if we have a pending response and it's likely a real error
+    if (pendingRes && !rawData.includes('[dotenv@')) {
+      pendingRes.json({ 
+        message: "Error processing response",
+        success: false,
+        error: parseError.message
+      });
+      pendingRes = null;
     }
   }
 });
-
 
 // Helper to send LSP/MCP-style framed messages
 function sendMcpMessage(json) {
@@ -267,8 +271,8 @@ app.post('/chat', async (req, res) => {
     const aiResponse = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
-        { role: "system", content: "You are a JSON-RPC router. Respond ONLY with valid JSON objects. No explanations." },
-        { role: "user", content: systemPrompt }
+        { role: "system", content: systemPrompt },
+        { role: "user", content: JSON.stringify(jsonrpc) }
       ],
       temperature: 0,
       max_tokens: 200

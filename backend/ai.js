@@ -299,6 +299,5 @@ async function handleVoiceToChat(audioFilePath) {
 
 module.exports = {
     generateChatResponse,
-    handleVoiceToChat,
-    RAG
+    handleVoiceToChat
 };
